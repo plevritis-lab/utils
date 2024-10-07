@@ -6,23 +6,30 @@ from skimage.segmentation import find_boundaries
 from tifffile import TiffFile
 from xml.etree import ElementTree
 
-def extract_proteomic_panel(image_path):
+def extract_proteomic_panel(image_path, panel_path = None):
     """extracts the protein panel used in CODEX experiments by parsing through the underlying QPTIFF metadata
 
     args:
         image_path (str): file path that points to the underlying location of the QPTIFF
+        panel_path (str, optional): file path that points to the underlying location of the channel_names.txt file; \
+                                    this argument should only be supplied when metadata parsing fails
     """
 
     protein_panel = []
 
-    with TiffFile(image_path) as qptiff:
-        for page in qptiff.series[0].pages:
-            image_metadata = page.tags["ImageDescription"].value
-            image_metadata = ElementTree.fromstring(image_metadata)
+    if panel_path:
+        with open(panel_path, "r") as panel:
+            protein_panel = [m.rstrip() for m in panel]
 
-            protein = image_metadata.find("Biomarker").text
+    else:
+        with TiffFile(image_path) as qptiff:
+            for page in qptiff.series[0].pages:
+                image_metadata = page.tags["ImageDescription"].value
+                image_metadata = ElementTree.fromstring(image_metadata)
 
-            protein_panel.append(protein)
+                protein = image_metadata.find("Biomarker").text
+
+                protein_panel.append(protein)
 
     return protein_panel
 
@@ -240,9 +247,11 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description = "interface for applying cellular segmentation algorithms, mesmer and cellpose; \
                                                     it is recommended to choose a cytoplasmic + nuclear combination for cellpose; \
                                                     it is recommended to choose a membrane + nuclear combination for mesmer")
-    
+        
     parser.add_argument("-i", "--image_path", help = "file path that points to the underlying location of the QPTIFF")
     parser.add_argument("-n", "--nuclear_channel", help = "name of the nuclear channel to be used in segmentation OR a display channel if overlay_masks is toggled")
+    parser.add_argument("-p", "--panel_path", help = "file path that points to the underlying location of the channel_names.txt file; \
+                                                      this argument is optional and should only be used when metadata parsing fails")
     parser.add_argument("-s", "--segment_channel", help = "name of the cytoplasm or membrane channel(s) to be used in segmentation OR a display channel if overlay_masks is toggled; \
                                                            if multiple channels are desired, please supply a comma separated list with no spaces, which will construct a pseudochannel that merges their intensities")
 
@@ -270,9 +279,22 @@ def main():
 
     np.random.seed(42)
 
-    print("processing sample", os.path.basename(os.path.splitext(image_path)[0]))
+    print("\nprocessing sample", os.path.basename(os.path.splitext(image_path)[0]))
 
-    panel = extract_proteomic_panel(image_path)
+    try:
+        panel = extract_proteomic_panel(image_path)
+    
+    except AttributeError:
+        print("\nERROR: unable to extract marker metadata from the provided file; "
+                  "please provide a channel_names.txt file instead")
+        
+        if arguments.panel_path:
+            print(f"INFO: extracting protein panel from {arguments.panel_path}")
+
+            panel = extract_proteomic_panel(image_path, arguments.panel_path)
+        
+        else:
+            return
 
     try:
         nuclear_channel_index = panel.index(nuclear_channel)
@@ -280,7 +302,7 @@ def main():
     
     except ValueError:
         print(f"\nERROR: please ensure that the provided nuclear ({nuclear_channel}) and segment " 
-                   f"({segment_channel}) channel names are in your protein panel")
+                  f"({segment_channel}) channel names are in your protein panel")
         return
     
     image = imread(image_path) # (c, y, x)
