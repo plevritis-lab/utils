@@ -248,10 +248,10 @@ def parse_arguments():
                                                     it is recommended to choose a cytoplasmic + nuclear combination for cellpose; \
                                                     it is recommended to choose a membrane + nuclear combination for mesmer")
         
-    parser.add_argument("-i", "--image_path", help = "file path that points to the underlying location of the QPTIFF")
-    parser.add_argument("-n", "--nuclear_channel", help = "name of the nuclear channel to be used in segmentation OR a display channel if overlay_masks is toggled")
+    parser.add_argument("-i", "--image_path", help = "file path that points to the underlying location of the QPTIFF or TIF")
     parser.add_argument("-p", "--panel_path", help = "file path that points to the underlying location of the channel_names.txt file; \
                                                       this argument is optional and should only be used when metadata parsing fails")
+    parser.add_argument("-n", "--nuclear_channel", help = "name of the nuclear channel to be used in segmentation OR a display channel if overlay_masks is toggled")
     parser.add_argument("-s", "--segment_channel", help = "name of the cytoplasm or membrane channel(s) to be used in segmentation OR a display channel if overlay_masks is toggled; \
                                                            if multiple channels are desired, please supply a comma separated list with no spaces, which will construct a pseudochannel that merges their intensities")
 
@@ -272,6 +272,7 @@ def main():
     arguments = parse_arguments()
 
     image_path = arguments.image_path
+    panel_path = arguments.panel_path
     nuclear_channel = arguments.nuclear_channel
     segment_channel = arguments.segment_channel
 
@@ -288,10 +289,9 @@ def main():
         print("\nERROR: unable to extract marker metadata from the provided file; "
                   "please provide a channel_names.txt file instead")
         
-        if arguments.panel_path:
-            print(f"INFO: extracting protein panel from {arguments.panel_path}")
-
-            panel = extract_proteomic_panel(image_path, arguments.panel_path)
+        if panel_path:
+            print(f"INFO: extracting protein panel from {panel_path}")
+            panel = extract_proteomic_panel(image_path, panel_path)
         
         else:
             return
