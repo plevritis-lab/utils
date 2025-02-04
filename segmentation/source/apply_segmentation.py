@@ -1,8 +1,8 @@
 import argparse
 import numpy as np
 import os
-from skimage.io import imread, imsave
 from skimage.segmentation import find_boundaries
+from tifffile import imread, imsave
 from utils import extract_proteomic_panel
 import warnings
 

@@ -1,7 +1,6 @@
 import numpy as np
 import os
-from skimage.io import imread, imsave
-from tifffile import TiffFile
+from tifffile import TiffFile, imread, imsave
 from xml.etree import ElementTree
 
 def extract_proteomic_panel(image_path, panel_path = None):
@@ -35,7 +34,7 @@ def condense_channels(image_path, panel_path, channels_to_remove):
     """condenses the channels of a multiplexed image by removing specified ones while updating the corresponding panel file
 
     args:
-        image_path (str): path to image file in .tif / .tiff format; 
+        image_path (str): path to image file in .tif / .tiff format; \
                           image should be of shape (c, y, x) or (z, y, x, c)
         panel_path (str): path to the panel file containing channel names
         channels_to_remove (list): list of channel names to be removed from the image and panel file
@@ -65,3 +64,22 @@ def condense_channels(image_path, panel_path, channels_to_remove):
     condensed_panel_path = os.path.join(os.path.dirname(panel_path), "condensed_channel_names.txt")
     with open(condensed_panel_path, "w") as panel:
         panel.write("\n".join(protein_panel))
+
+def reformat_images(image_path):
+    """reformats an image by transposing its dimensions, saving to a new directory
+    
+    args:
+        image_path (str): path to image file in .tif / .tiff format; \
+                          image should be of shape (y, x, c) and will be reformatted to (c, y, x)
+    """
+    
+    image = imread(image_path)
+
+    image = image.transpose(2, 0, 1) # (c, y, x)
+
+    sample_name = os.path.basename(image_path)
+    save_directory = os.path.join(os.path.dirname(image_path), "reformatted_images")
+    save_path = os.path.join(save_directory, sample_name)
+
+    os.makedirs(save_directory, exist_ok = True)
+    imsave(save_path, image, check_contrast = False)

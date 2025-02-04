@@ -2,8 +2,8 @@ import argparse
 import numpy as np
 import os
 import pandas as pd
-from skimage.io import imread
 from skimage.measure import regionprops
+from tifffile import imread
 from utils import extract_proteomic_panel
 
 def quantify_expression(image, segmentation_mask, panel, save_path):
