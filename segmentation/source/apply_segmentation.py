@@ -2,9 +2,10 @@ import argparse
 import numpy as np
 import os
 from skimage.segmentation import find_boundaries
-from tifffile import imread, imsave
+from tifffile import imread, imwrite
 from utils import extract_proteomic_panel
 import warnings
+import xml.etree.ElementTree as ET
 
 warnings.filterwarnings("ignore", category = FutureWarning, message = ".*torch.load.*weights_only=False.*") # disable cellpose warning
 
@@ -12,13 +13,13 @@ def construct_pseudochannel(image, segment_channel):
     """constructs a pseudochannel that merges intensities from a user-provided list of markers
 
     args:
-        image (array): loaded matrix representation of the image of shape (c, y, x);
+        image (array): loaded matrix representation of the image of shape (c, y, x); \
                        introduces the pseudochannel at the end of the channels dimension, resulting in a new image of shape (c + 1, y, x)
         segment_channel (list): list of ordinal representations of the segment channels (0-indexed)
     """
 
     pseudochannel = np.sum(image[segment_channel, :, :], axis = 0)
-    pseudochannel = np.clip(pseudochannel, 0, 255).astype(np.uint8)
+    pseudochannel = np.clip(pseudochannel, 0, np.iinfo(image.dtype).max).astype(image.dtype)
     pseudochannel = pseudochannel[np.newaxis, :, :]
 
     return np.concatenate((image, pseudochannel), axis = 0)
@@ -97,7 +98,7 @@ def compress_channels(images, nuclear_channel, segment_channel, save_path):
         compressed_image[1, :, :] = image[segment_channel, :, :] # color the segment channel G
         compressed_image[2, :, :] = image[nuclear_channel, :, :] # color the nuclear channel B
 
-        imsave(os.path.join(save_path, f"image_{i + 1}.png"), np.transpose(compressed_image, (1, 2, 0)), check_contrast = False)
+        imwrite(os.path.join(save_path, f"image_{i + 1}.tif"), np.transpose(compressed_image, (1, 2, 0)))
         compressed_images[i] = compressed_image
     
     return compressed_images
@@ -121,9 +122,9 @@ def apply_cellpose(compressed_images, segment_channel_name, save_path):
 
     for i, compressed_image in enumerate(compressed_images):
         masks, flows, _, diams = model.eval(compressed_image, [2, 3], diameter = None)
-        compressed_image[0, :, :] = utils.masks_to_outlines(masks) * 255 # color the segmentation mask R
+        compressed_image[0, :, :] = utils.masks_to_outlines(masks) * np.iinfo(compressed_image.dtype).max # color the segmentation mask R
 
-        imsave(os.path.join(save_path, f"image_{i + 1}.png"), np.transpose(compressed_image, (1, 2, 0)), check_contrast = False)
+        imwrite(os.path.join(save_path, f"image_{i + 1}.tif"), np.transpose(compressed_image, (1, 2, 0)))
         io.masks_flows_to_seg(compressed_image, masks, flows, os.path.join(save_path, f"image_{i + 1}"), diams, [2, 3])
 
 def apply_mesmer(compressed_images, segment_channel_name, save_path):
@@ -164,9 +165,9 @@ def apply_mesmer(compressed_images, segment_channel_name, save_path):
         reshaped_image = np.transpose(reshaped_image, (1, 0, 2))
 
         located_boundaries = find_boundaries(segmentation_predictions, connectivity = 1, mode = "inner")
-        reshaped_image[:, :, 0][located_boundaries > 0] = 255
+        reshaped_image[:, :, 0][located_boundaries > 0] = np.iinfo(reshaped_image.dtype).max
 
-        imsave(os.path.join(save_path, f"image_{i + 1}.png"), reshaped_image, check_contrast = False)
+        imwrite(os.path.join(save_path, f"image_{i + 1}.tif"), reshaped_image)
         np.save(os.path.join(save_path, f"image_{i + 1}_seg.npy"), segmentation_predictions)
 
 def overlay_masks(compressed_images, cellpose_segment_channel_name, mesmer_segment_channel_name, display_segment_channel_name, load_path, save_path):
@@ -206,13 +207,13 @@ def overlay_masks(compressed_images, cellpose_segment_channel_name, mesmer_segme
 
         # TODO - consider handcrafting a legend for the overlaid masks, with labels for the segment channel as well as red and yellow outlines (this requires a nontrivial fix without using matplotlib)
         
-        overlaid_image[0, :, :][yellow_mask] = 255
-        overlaid_image[1, :, :][yellow_mask] = 255 # color cellpose mask Y
-        overlaid_image[0, :, :][red_mask] = 255 # color mesmer mask R
-        overlaid_image[1, :, :][red_mask & yellow_mask] = 165 # color intersection O
+        overlaid_image[0, :, :][yellow_mask] = np.iinfo(overlaid_image.dtype).max
+        overlaid_image[1, :, :][yellow_mask] = np.iinfo(overlaid_image.dtype).max # color cellpose mask Y 
+        overlaid_image[0, :, :][red_mask] = np.iinfo(overlaid_image.dtype).max # color mesmer mask R
+        overlaid_image[1, :, :][red_mask & yellow_mask] = int(np.iinfo(overlaid_image.dtype).max * 2 / 3) # color intersection O
 
-        imsave(os.path.join(save_path, f"image_{i + 1}_cellpose_{cellpose_segment_channel_name}_mesmer_{mesmer_segment_channel_name}_display_{display_segment_channel_name}.png"),
-                   np.transpose(overlaid_image, (1, 2, 0)), check_contrast = False)
+        imwrite(os.path.join(save_path, f"image_{i + 1}_cellpose_{cellpose_segment_channel_name}_mesmer_{mesmer_segment_channel_name}_display_{display_segment_channel_name}.tif"),
+                   np.transpose(overlaid_image, (1, 2, 0)))
 
 def parse_arguments():
     """parses several command line arguments provided by the user (use --help to see the full list)"""
@@ -260,7 +261,7 @@ def main():
     try:
         panel = extract_proteomic_panel(image_path)
     
-    except (AttributeError, KeyError):
+    except (AttributeError, KeyError, ET.ParseError):
         print("\nERROR: unable to extract marker metadata from the provided file; "
                   "please provide a channel_names.txt file instead")
         
@@ -306,7 +307,7 @@ def main():
 
         compressed_images = compress_channels([image], nuclear_channel_index, (segment_channel, 
                                                                                segment_channel_index), save_path)
-
+        
     if arguments.apply_cellpose:
         apply_cellpose(compressed_images, segment_channel, save_path)
     

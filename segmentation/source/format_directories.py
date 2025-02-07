@@ -6,7 +6,7 @@ def prepare_input(data_directory):
     """prepares the input directory by organizing image files into subdirectories
 
     args:
-        data_directory (str):  the path to the directory containing the image files
+        data_directory (str): the path to the directory containing the image files
     """
 
     for image_name in os.listdir(data_directory):
