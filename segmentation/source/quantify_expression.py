@@ -5,6 +5,7 @@ import pandas as pd
 from skimage.measure import regionprops
 from tifffile import imread
 from utils import extract_proteomic_panel
+import xml.etree.ElementTree as ET
 
 def quantify_expression(image, segmentation_mask, panel, save_path):
     """quantifies expression of every marker present in the panel in the provided image per cell
@@ -79,7 +80,7 @@ def main():
     try:
         panel = extract_proteomic_panel(image_path)
     
-    except AttributeError:
+    except (AttributeError, KeyError, ET.ParseError):
         print("\nERROR: unable to extract marker metadata from the provided file; "
                   "please provide a channel_names.txt file instead")
         

@@ -1,4 +1,5 @@
 import argparse
+import logging
 import numpy as np
 import os
 from skimage.segmentation import find_boundaries
@@ -8,6 +9,11 @@ import warnings
 import xml.etree.ElementTree as ET
 
 warnings.filterwarnings("ignore", category = FutureWarning, message = ".*torch.load.*weights_only=False.*") # disable cellpose warning
+
+# disable mesmer warnings
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+logging.getLogger().handlers = []
+logging.basicConfig(level = logging.ERROR)
 
 def construct_pseudochannel(image, segment_channel):
     """constructs a pseudochannel that merges intensities from a user-provided list of markers
