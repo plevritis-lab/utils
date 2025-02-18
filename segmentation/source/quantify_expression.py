@@ -14,7 +14,7 @@ def quantify_expression(image, segmentation_mask, panel, save_path):
         image (array): loaded matrix representation of the image of shape (c, y, x)
         segmentation_mask (array): loaded matrix representation of the segmentation mask of shape (y, x)
         panel (list): list of protein channel names
-        save_path (str): directory where output (cell expressions) will be written
+        save_path (str): file where output (cell measurements) will be written
     """
 
     cell_data = {}
@@ -51,7 +51,7 @@ def quantify_expression(image, segmentation_mask, panel, save_path):
             cell_data[cell_identifier][panel[channel_number].upper()] = cell_intensity
     
     cell_expressions = pd.DataFrame.from_dict(cell_data, orient = "index")
-    cell_expressions.to_csv(os.path.join(save_path, "cell_expressions.csv"), index = False)
+    cell_expressions.to_csv(f"{save_path}_cell_measurements.csv", index = False)
 
 def parse_arguments():
     """parses several command line arguments provided by the user (use --help to see the full list)"""
@@ -62,6 +62,7 @@ def parse_arguments():
     parser.add_argument("-m", "--mask_path", help = "file path that points to the underlying location of the segmentation mask, stored as a .npy file")
     parser.add_argument("-p", "--panel_path", help = "file path that points to the underlying location of the channel_names.txt file; \
                                                       this argument is optional and should only be used when metadata parsing fails")
+    parser.add_argument("-s", "--save_path", help = "directory path that points to the underlying location where output will be written")
 
     parser.add_argument("--use_mesmer", action = "store_true", help = "toggle only if using a mesmer-generated segmentation mask")
     parser.add_argument("--use_cellpose", action = "store_true", help = "toggle only if using a cellpose-generated segmentation mask")
@@ -74,6 +75,7 @@ def main():
     image_path = arguments.image_path
     mask_path = arguments.mask_path
     panel_path = arguments.panel_path
+    save_path = arguments.save_path
 
     print("\nprocessing sample", os.path.basename(os.path.splitext(image_path)[0]))
 
@@ -93,13 +95,19 @@ def main():
 
     image = imread(image_path) # (c, y, x)
     
-    save_path = os.path.dirname(mask_path)
-
     if arguments.use_mesmer:
+        save_path = os.path.join(save_path, "quantifications", "mesmer")
+        os.makedirs(save_path, exist_ok = True)
+        save_path = os.path.join(save_path, os.path.basename(os.path.splitext(image_path)[0]))
+
         mesmer_segmentation = np.load(mask_path, allow_pickle = True)
         quantify_expression(image, mesmer_segmentation, panel, save_path)
     
     if arguments.use_cellpose:
+        save_path = os.path.join(save_path, "quantifications", "mesmer")
+        os.makedirs(save_path, exist_ok = True)
+        save_path = os.path.join(save_path, os.path.basename(os.path.splitext(image_path)[0]))
+    
         cellpose_segmentation = np.load(mask_path, allow_pickle = True).item()["outlines"]
         quantify_expression(image, cellpose_segmentation, panel, save_path)
 
