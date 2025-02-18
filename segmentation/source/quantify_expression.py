@@ -104,7 +104,7 @@ def main():
         quantify_expression(image, mesmer_segmentation, panel, save_path)
     
     if arguments.use_cellpose:
-        save_path = os.path.join(save_path, "quantifications", "mesmer")
+        save_path = os.path.join(save_path, "quantifications", "cellpose")
         os.makedirs(save_path, exist_ok = True)
         save_path = os.path.join(save_path, os.path.basename(os.path.splitext(image_path)[0]))
     
