@@ -20,8 +20,6 @@ library(CELESTA)
 #'   "./521_S1_reg024"
 #' )
 identify_cell_types <- function(quantified_imaging_data, signature_matrix, thresholds, save_path) {
-    quantified_imaging_data$Y <- max(quantified_imaging_data$Y) - quantified_imaging_data$Y # mirror effect
-
     celesta <- CreateCelestaObject(project_title = save_path,
                                    prior_marker_info = signature_matrix,
                                    imaging_data_file = quantified_imaging_data)
@@ -55,7 +53,7 @@ parse_arguments <- function() {
     
     parser$add_argument("--data_directory", help = "path to a data directory of .csv files", required = TRUE)
     parser$add_argument("--filter", help = "comma-separated list of sample names to process, or 'all' to process everything; \
-                                            defaults to all", default = "all", required = TRUE)
+                                            defaults to all", default = "all")
     parser$add_argument("--save_path", help = "path to save celesta's output files", required = TRUE)
     parser$add_argument("--signature_matrix", help = "path to the signature matrix", required = TRUE)
     parser$add_argument("--thresholds_directory", help = "path to a thresholds directory of .csv files", required = TRUE)
@@ -98,6 +96,8 @@ main <- function() {
         }
          
         identify_cell_types(sample_data, signature_matrix, sample_thresholds, sample_save_path)
+        
+        break
     }
 }
 
