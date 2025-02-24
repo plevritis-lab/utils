@@ -11,6 +11,8 @@ library(CELESTA)
 #' @param signature_matrix celesta signature matrix in .csv format
 #' @param thresholds sample-specific cell type thresholds in .csv format
 #' @param save_path path to save celesta assignments of form ("{base_directory}/{sample_name}")
+#' @param cofactor asinh cofactor for marker expression; \
+#'                 defaults to 10
 #'
 #' @examples
 #' identify_cell_types(
@@ -19,7 +21,7 @@ library(CELESTA)
 #'   "./521_S1_reg024_thresholds.csv",
 #'   "./521_S1_reg024"
 #' )
-identify_cell_types <- function(quantified_imaging_data, signature_matrix, thresholds, save_path) {
+identify_cell_types <- function(quantified_imaging_data, signature_matrix, thresholds, save_path, cofactor = 10) {
     celesta <- CreateCelestaObject(project_title = save_path,
                                    prior_marker_info = signature_matrix,
                                    imaging_data_file = quantified_imaging_data)
@@ -31,12 +33,17 @@ identify_cell_types <- function(quantified_imaging_data, signature_matrix, thres
                            high_expression_threshold_index = thresholds$INDEX,
                            save_result = F)
     
-    marker_probabilities <- data.frame(celesta@marker_exp_prob, check.names = FALSE)
+    markers <- colnames(quantified_imaging_data)[!colnames(quantified_imaging_data) %in% c("CELL_IDENTIFIER", "MAJOR_AXIS_LENGTH", "MINOR_AXIS_LENGTH",
+                                                                                               "X", "Y", "SIZE", "ECCENTRICITY", "ORIENTATION")]
+    transformed_marker_expressions <- asinh(data.matrix(quantified_imaging_data[, markers]) / cofactor)
+    marker_probabilities <- CalcMarkerActivationProbability(transformed_marker_expressions)
     colnames(marker_probabilities) <- paste0(colnames(marker_probabilities), "_PROBABILITY")
     
     assignments <- data.frame(celesta@final_cell_type_assignment, check.names = FALSE)
     colnames(assignments) <- gsub(" ", "_", toupper(colnames(assignments)))
     assignments <- assignments[, c("CELL_TYPE_NUMBER", "FINAL_CELL_TYPE")]
+    
+    assignments$FINAL_CELL_TYPE <- gsub("Unknown", "unknown", assignments$FINAL_CELL_TYPE)
     
     write.csv(cbind(quantified_imaging_data, marker_probabilities, assignments), 
                   file.path(save_path, sprintf("%s_assignments.csv", basename(save_path))), row.names = FALSE)
@@ -69,15 +76,15 @@ parse_arguments <- function() {
 #' main()
 main <- function() {
     args <- parse_arguments()
-    
+
     data_directory <- args$data_directory
     filter <- args$filter
     save_path <- args$save_path
     signature_matrix <- args$signature_matrix
     thresholds_directory <- args$thresholds_directory
 
-    signature_matrix <- read.csv(args$signature_matrix)
-    sample_quantifications <- list.files(args$data_directory, pattern = "\\.csv$", full.names = TRUE)
+    signature_matrix <- read.csv(signature_matrix)
+    sample_quantifications <- list.files(data_directory, pattern = "\\.csv$", full.names = TRUE)
     
     if (filter != "all") {
         filter <- strsplit(filter, ",")[[1]]
@@ -96,8 +103,6 @@ main <- function() {
         }
          
         identify_cell_types(sample_data, signature_matrix, sample_thresholds, sample_save_path)
-        
-        break
     }
 }
 
