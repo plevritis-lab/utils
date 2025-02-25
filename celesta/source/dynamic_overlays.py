@@ -4,9 +4,20 @@ import napari
 import numpy as np
 import os
 import pandas as pd
+from scipy.ndimage import binary_erosion
 from tifffile import imread
 
-def create_assignment_overlays(spatial_images, assignments, colormap):
+def create_assignment_overlays(spatial_images, assignments, colormap, segmentation_mask = None):
+    """creates interactive visualization overlays for cell assignments and spatial images using napari
+
+    args:
+        spatial_images (dictionary): dictionary containing image arrays for proteomic and / or histology data
+        assignments (dataframe): dataframe containing cell assignments and their properties
+        colormap (dictionary): dictionary mapping cell types and markers to their display colors
+        segmentation_mask (array, optional): array containing cell segmentation masks; \
+                                             defaults to None
+    """
+
     viewer = napari.Viewer()
 
     exclude_columns = ["CELL_IDENTIFIER", "MAJOR_AXIS_LENGTH", "MINOR_AXIS_LENGTH", "X", "Y", 
@@ -35,22 +46,44 @@ def create_assignment_overlays(spatial_images, assignments, colormap):
             image_layer.visible = False
 
     unique_cell_types = assignments["FINAL_CELL_TYPE"].unique()
-    for cell_type in unique_cell_types:
-        centroids = assignments.loc[(assignments["FINAL_CELL_TYPE"] == cell_type), ["Y", "X"]]
+
+    if segmentation_mask is not None:
+        for cell_type in unique_cell_types:
+            try:
+                color = colormap[cell_type]["color"]
+
+            except KeyError:
+                print("\nERROR: please provide a color for cell type:", cell_type)
+                return
+                
+            cell_type_outline = np.zeros(segmentation_mask.shape)
+            cell_ids = assignments.loc[assignments["FINAL_CELL_TYPE"] == cell_type, "CELL_IDENTIFIER"]
+            
+            for cell_id in cell_ids:
+                cell_mask = (segmentation_mask == cell_id)
+
+                eroded = binary_erosion(cell_mask)
+                outline = cell_mask ^ eroded
+                cell_type_outline[outline] = 1
+            
+            image_layer = viewer.add_image(cell_type_outline, name = cell_type, blending = "additive",
+                                               colormap = napari.utils.colormaps.Colormap(["transparent", color]))
+            image_layer.visible = False
         
-        try:
-            color = colormap[cell_type]["color"]
+    else:
+        for cell_type in unique_cell_types:
+            centroids = assignments.loc[(assignments["FINAL_CELL_TYPE"] == cell_type), ["Y", "X"]]
+            
+            try:
+                color = colormap[cell_type]["color"]
 
-        except KeyError:
-            print("\nERROR: please provide a color for cell type:", cell_type)
-            return
+            except KeyError:
+                print("\nERROR: please provide a color for cell type:", cell_type)
+                return
 
-        image_layer = viewer.add_points(centroids,
-                                        border_color = "transparent",
-                                        face_color = color,
-                                        name = cell_type,
-                                        size = 15)
-        image_layer.visible = False
+            image_layer = viewer.add_points(centroids, name = cell_type, border_color = "transparent", 
+                                                face_color = color, size = 15)
+            image_layer.visible = False
     
     napari.run()
 
@@ -65,6 +98,9 @@ def parse_arguments():
 
     parser.add_argument("-e", "--histology_path", help = "(optional) file path that points to the underlying location of the histology TIF or TIFF file")
     parser.add_argument("-m", "--mask_path", help = "(optional) file path that points to the underlying location of the segmentation mask, stored as a .npy file")
+
+    parser.add_argument("--use_mesmer", action = "store_true", help = "toggle only if using a mesmer-generated segmentation mask")
+    parser.add_argument("--use_cellpose", action = "store_true", help = "toggle only if using a cellpose-generated segmentation mask")
 
     return parser.parse_args()
     
@@ -84,11 +120,19 @@ def main():
 
     with open(colormap_path, "r") as file:
         cell_type_info = json.load(file)
-
+    
     spatial_images = {"proteomic": imread(image_path), 
                       "histology": imread(histology_path)} if histology_path \
                                                                else {"proteomic": imread(image_path)}
     
-    create_assignment_overlays(spatial_images, assignments, cell_type_info)
+    segmentation_mask = None
+
+    if arguments.use_mesmer:
+        segmentation_mask = np.load(mask_path, allow_pickle = True)
+
+    if arguments.use_cellpose:
+        segmentation_mask = np.load(mask_path, allow_pickle = True).item()["outlines"]
+    
+    create_assignment_overlays(spatial_images, assignments, cell_type_info, segmentation_mask)
 
 main()
