@@ -1,0 +1,25 @@
+{
+    "unknown": {
+        "color": "#D3D3D3"
+    },
+
+    "epithelial cell (cytokeratin+)": {
+        "marker": "CYTOKERATIN",
+        "color": "#FFE5B4"
+    },
+
+    "endothelial cell (CD31+)": {
+        "marker": "CD31",
+        "color": "#F0F8FF"
+    },
+
+    "fibroblast (FAP+)": {
+        "marker": "FAP",
+        "color": "#FFB6C1"
+    },
+
+    "T cell (CD3+)": {
+        "marker": "CD3",
+        "color": "#F0E68C"
+    }
+}
