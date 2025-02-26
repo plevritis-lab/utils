@@ -8,8 +8,24 @@ from scipy.ndimage import binary_erosion
 import seaborn as sns
 from tifffile import imread
 
+# TODO:
+# 1. automatic ROI selection (initial preprocessing step)
+# 2. colocalization / proportion plots integrated into the viewer
+
 def stratify_marker_probabilities(assignments):
+    """stratifies cell marker probabilities into discrete categories (in place) for visualization
+
+    args:
+        assignments (dataframe): dataframe containing cell assignments and marker probabilities
+    """
+
     def categorize_expression(marker_probability):
+        """categorizes marker probabilities into discrete bins
+
+        args:
+            marker_probability (float): probability value between 0 and 1
+        """
+
         if marker_probability > 0.9:
             return ">0.9"
         elif marker_probability > 0.8:
@@ -27,26 +43,37 @@ def stratify_marker_probabilities(assignments):
     
     return assignments
 
-def create_assignment_overlays(spatial_images, assignments, colormap, segmentation_mask = None):
-    """creates interactive visualization overlays for cell assignments and spatial images using napari
+def create_cell_type_outline(assignments, segmentation_mask, cell_type):
+    """creates an outline for a specific cell type using a segmentation mask
 
     args:
-        spatial_images (dictionary): dictionary containing image arrays for proteomic and / or histology data
-        assignments (dataframe): dataframe containing cell assignments and their properties
-        colormap (dictionary): dictionary mapping cell types and markers to their display colors
-        segmentation_mask (array, optional): array containing cell segmentation masks; \
-                                             defaults to None
+        assignments (dataframe): dataframe containing cell assignments and locations
+        segmentation_mask (array): mask array where each cell has a unique identifier
+        cell_type (string): name of the cell type to outline
     """
 
-    viewer = napari.Viewer()
+    cell_type_outline = np.zeros(segmentation_mask.shape)
+    cell_ids = assignments.loc[assignments["FINAL_CELL_TYPE"] == cell_type, "CELL_IDENTIFIER"]
+    
+    for cell_id in cell_ids:
+        cell_mask = (segmentation_mask == cell_id)
 
-    exclude_columns = ["CELL_IDENTIFIER", "MAJOR_AXIS_LENGTH", "MINOR_AXIS_LENGTH", "X", "Y", 
-                           "SIZE", "ECCENTRICITY", "ORIENTATION", "CELL_TYPE_NUMBER", "FINAL_CELL_TYPE"]
-    panel = assignments.columns[~assignments.columns.str.contains("_PROBABILITY$") & 
-                                    ~assignments.columns.isin(exclude_columns)].tolist()
+        eroded = binary_erosion(cell_mask)
+        outline = cell_mask ^ eroded
+        cell_type_outline[outline] = 1
     
-    markers_to_colors = {info["marker"]: info["color"] for info in colormap.values() if info.get("marker")}
-    
+    return cell_type_outline
+
+def add_spatial_images(viewer, spatial_images, panel, markers_to_colors):
+    """adds spatial images to the napari viewer with user-provided marker coloring
+
+    args:
+        viewer (viewer): napari viewer instance
+        spatial_images (dictionary): dictionary mapping modality names to image arrays
+        panel (list): list of marker names
+        markers_to_colors (dictionary): mapping of marker names to hexadecimal color values
+    """
+
     for modality, image in spatial_images.items():
         spatial_images[modality] = (image - image.min()) / (image.max() - image.min())
 
@@ -56,7 +83,7 @@ def create_assignment_overlays(spatial_images, assignments, colormap, segmentati
                                                    contrast_limits = [0, 1], blending = "additive")
                 image_layer.visible = False
                 
-                if protein in markers_to_colors:
+                if protein in markers_to_colors: 
                     image_layer.colormap = napari.utils.colormaps.Colormap(["black", 
                                                markers_to_colors[protein]])
 
@@ -64,6 +91,16 @@ def create_assignment_overlays(spatial_images, assignments, colormap, segmentati
             image_layer = viewer.add_image(np.transpose(spatial_images[modality], (1, 2, 0)), name = modality, 
                                                contrast_limits = [0, 1], blending = "additive")
             image_layer.visible = False
+
+def add_cell_type_visualization(viewer, assignments, colormap, segmentation_mask):
+    """adds cell type visualization overlays to the napari viewer
+
+    args:
+        viewer (viewer): napari viewer instance
+        assignments (dataframe): dataframe containing cell assignments and locations
+        colormap (dictionary): dictionary mapping cell types to colors and marker information
+        segmentation_mask (array, optional): segmentation mask array for cell outlines
+    """
 
     unique_cell_types = assignments["FINAL_CELL_TYPE"].unique()
 
@@ -74,38 +111,39 @@ def create_assignment_overlays(spatial_images, assignments, colormap, segmentati
 
             except KeyError:
                 print("\nERROR: please provide a color for cell type:", cell_type)
-                return
-                
-            cell_type_outline = np.zeros(segmentation_mask.shape)
-            cell_ids = assignments.loc[assignments["FINAL_CELL_TYPE"] == cell_type, "CELL_IDENTIFIER"]
-            
-            for cell_id in cell_ids:
-                cell_mask = (segmentation_mask == cell_id)
+                return False
 
-                eroded = binary_erosion(cell_mask)
-                outline = cell_mask ^ eroded
-                cell_type_outline[outline] = 1
-            
-            image_layer = viewer.add_image(cell_type_outline, name = cell_type, blending = "additive",
+            cell_type_outline = create_cell_type_outline(assignments, segmentation_mask, cell_type)
+
+            image_layer = viewer.add_image(cell_type_outline, name = cell_type, blending = "additive", 
                                                colormap = napari.utils.colormaps.Colormap(["transparent", color]))
             image_layer.visible = False
-        
+
     else:
         for cell_type in unique_cell_types:
-            centroids = assignments.loc[(assignments["FINAL_CELL_TYPE"] == cell_type), ["Y", "X"]]
-            
             try:
                 color = colormap[cell_type]["color"]
 
             except KeyError:
                 print("\nERROR: please provide a color for cell type:", cell_type)
-                return
+                return False
+
+            centroids = assignments.loc[(assignments["FINAL_CELL_TYPE"] == cell_type), ["Y", "X"]]
 
             image_layer = viewer.add_points(centroids, name = cell_type, border_color = "transparent", 
                                                 face_color = color, size = 15)
             image_layer.visible = False
 
-    assignments = stratify_marker_probabilities(assignments)
+    return True
+
+def add_probability_visualization(viewer, assignments, panel):
+    """adds marker probability visualization overlays to the napari viewer as points
+
+    args:
+        viewer (viewer): napari viewer instance
+        assignments (dataframe): dataframe containing cell assignments and probabilities
+        panel (list): list of marker names to visualize
+    """
 
     centroids = assignments[["Y", "X"]].values
     point_cloud_sequence = np.zeros((len(centroids) * len(panel), 3))
@@ -136,7 +174,29 @@ def create_assignment_overlays(spatial_images, assignments, colormap, segmentati
     viewer.add_points(point_cloud_sequence, name = "probabilities", border_color = "transparent",
                           face_color = color_sequence, size = 12)
 
-    # TODO: add legend for color mapping of probabilities
+def create_assignment_overlays(spatial_images, assignments, colormap, segmentation_mask = None):
+    """creates a napari viewer with various visual overlays for cell assignments
+
+    args:
+        spatial_images (dictionary): dictionary mapping modality names ("proteomic", "histology") to image arrays 
+        assignments (dataframe): dataframe containing cell assignments, locations, and marker probabilities
+        colormap (dictionary): dictionary mapping cell types to colors and marker information
+        segmentation_mask (array): segmentation mask array where each cell has unique identifier; \
+                                   defaults to None
+    """
+
+    viewer = napari.Viewer()
+
+    exclude_columns = ["CELL_IDENTIFIER", "MAJOR_AXIS_LENGTH", "MINOR_AXIS_LENGTH", "X", "Y", 
+                           "SIZE", "ECCENTRICITY", "ORIENTATION", "CELL_TYPE_NUMBER", "FINAL_CELL_TYPE"]
+    panel = assignments.columns[~assignments.columns.str.contains("_PROBABILITY$") & 
+                                    ~assignments.columns.isin(exclude_columns)].tolist()
+    
+    markers_to_colors = {info["marker"]: info["color"] for info in colormap.values() if info.get("marker")}
+    
+    add_spatial_images(viewer, spatial_images, panel, markers_to_colors)
+    add_cell_type_visualization(viewer, assignments, colormap, segmentation_mask)
+    add_probability_visualization(viewer, stratify_marker_probabilities(assignments), panel)
 
     napari.run()
 
