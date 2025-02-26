@@ -5,7 +5,27 @@ import numpy as np
 import os
 import pandas as pd
 from scipy.ndimage import binary_erosion
+import seaborn as sns
 from tifffile import imread
+
+def stratify_marker_probabilities(assignments):
+    def categorize_expression(marker_probability):
+        if marker_probability > 0.9:
+            return ">0.9"
+        elif marker_probability > 0.8:
+            return ">0.8"
+        elif marker_probability > 0.7:
+            return ">0.7"
+        elif marker_probability > 0.5:
+            return ">0.5"
+        else:
+            return "<=0.5"
+    
+    probability_columns = assignments.columns[assignments.columns.str.endswith("_PROBABILITY")]
+    assignments[probability_columns] = assignments[probability_columns].apply(lambda x: \
+                                                                                  x.map(categorize_expression))
+    
+    return assignments
 
 def create_assignment_overlays(spatial_images, assignments, colormap, segmentation_mask = None):
     """creates interactive visualization overlays for cell assignments and spatial images using napari
@@ -84,7 +104,40 @@ def create_assignment_overlays(spatial_images, assignments, colormap, segmentati
             image_layer = viewer.add_points(centroids, name = cell_type, border_color = "transparent", 
                                                 face_color = color, size = 15)
             image_layer.visible = False
-    
+
+    assignments = stratify_marker_probabilities(assignments)
+
+    centroids = assignments[["Y", "X"]].values
+    point_cloud_sequence = np.zeros((len(centroids) * len(panel), 3))
+    color_sequence = np.zeros((len(centroids) * len(panel), 3))
+
+    probability_colors = sns.color_palette("light:b", 4)
+    background_color = [1, 1, 1] if viewer.theme == "light" else [0, 0, 0]
+    probability_color_mapping = {
+        "<=0.5": background_color,
+         ">0.5": probability_colors[0],
+         ">0.7": probability_colors[1],
+         ">0.8": probability_colors[2],
+         ">0.9": probability_colors[3]
+    }
+
+    for i, marker in enumerate(panel):
+        start_index = i * len(centroids)
+        end_index = (i + 1) * len(centroids)
+
+        point_cloud_sequence[start_index:end_index, 0] = i
+        point_cloud_sequence[start_index:end_index, 1:] = centroids
+        
+        marker_probabilities = assignments[f"{marker}_PROBABILITY"].values
+        for discretization, rgb_color in probability_color_mapping.items():
+            mask = marker_probabilities == discretization
+            color_sequence[start_index:end_index][mask] = rgb_color
+
+    viewer.add_points(point_cloud_sequence, name = "probabilities", border_color = "transparent",
+                          face_color = color_sequence, size = 12)
+
+    # TODO: add legend for color mapping of probabilities
+
     napari.run()
 
 def parse_arguments():
