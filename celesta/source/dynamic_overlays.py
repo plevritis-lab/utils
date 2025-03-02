@@ -11,6 +11,7 @@ from tifffile import imread
 # TODO:
 # 1. automatic ROI selection (initial preprocessing step)
 # 2. colocalization / proportion plots integrated into the viewer
+# 3. legend for markers and probability levels
 
 def stratify_marker_probabilities(assignments):
     """stratifies cell marker probabilities into discrete categories (in place) for visualization
@@ -136,43 +137,75 @@ def add_cell_type_visualization(viewer, assignments, colormap, segmentation_mask
 
     return True
 
-def add_probability_visualization(viewer, assignments, panel):
+def add_probability_visualization(viewer, assignments, panel, image_shape, legend_spacing = (50, 200)):
     """adds marker probability visualization overlays to the napari viewer as points
 
     args:
         viewer (viewer): napari viewer instance
         assignments (dataframe): dataframe containing cell assignments and probabilities
         panel (list): list of marker names to visualize
+        image_shape (tuple): shape of the proteomic image array
+        legend_spacing (tuple): spacing between legend items of shape (y, x); \
+                                y controls the horizontal spacing between the point cloud and legend items; \
+                                x controls the vertical spacing between legend items; \
+                                defaults to (50, 200)
     """
 
-    centroids = assignments[["Y", "X"]].values
-    point_cloud_sequence = np.zeros((len(centroids) * len(panel), 3))
-    color_sequence = np.zeros((len(centroids) * len(panel), 3))
-
     probability_colors = sns.color_palette("light:b", 4)
-    background_color = [1, 1, 1] if viewer.theme == "light" else [0, 0, 0]
     probability_color_mapping = {
-        "<=0.5": background_color,
-         ">0.5": probability_colors[0],
-         ">0.7": probability_colors[1],
-         ">0.8": probability_colors[2],
-         ">0.9": probability_colors[3]
+        ">0.5": probability_colors[0],
+        ">0.7": probability_colors[1],
+        ">0.8": probability_colors[2],
+        ">0.9": probability_colors[3]
     }
 
-    for i, marker in enumerate(panel):
-        start_index = i * len(centroids)
-        end_index = (i + 1) * len(centroids)
+    centroids = assignments[["Y", "X"]].values
 
-        point_cloud_sequence[start_index:end_index, 0] = i
-        point_cloud_sequence[start_index:end_index, 1:] = centroids
+    num_centroids = len(centroids)
+    num_markers = len(panel)
+    num_legend_items = len(probability_color_mapping)
+    num_total_points = num_markers * (num_centroids + num_legend_items + 1)
+
+    point_cloud_sequence = np.zeros((num_total_points, 3))
+    color_sequence = np.zeros((num_total_points, 3))
+    point_sizes = np.full(num_total_points, 15)
+    text_labels = [""] * num_total_points
+
+    for i, marker in enumerate(panel):
+        start_index = i * num_centroids
+        end_index = (i + 1) * num_centroids
+
+        point_cloud_sequence[start_index : end_index, 0] = i
+        point_cloud_sequence[start_index : end_index, 1:] = centroids
         
         marker_probabilities = assignments[f"{marker}_PROBABILITY"].values
         for discretization, rgb_color in probability_color_mapping.items():
-            mask = marker_probabilities == discretization
-            color_sequence[start_index:end_index][mask] = rgb_color
+            color_sequence[start_index : end_index][marker_probabilities == discretization] = rgb_color
 
-    viewer.add_points(point_cloud_sequence, name = "probabilities", border_color = "transparent",
-                          face_color = color_sequence, size = 12)
+        title_index = num_centroids * num_markers + i
+    
+        point_cloud_sequence[title_index] = [i, image_shape[0] / 2, image_shape[1] + legend_spacing[1]]
+        text_labels[title_index] = marker
+
+        legend_start_index = num_markers * (num_centroids + 1) + (i * num_legend_items)
+        for j, (probability_label, color) in enumerate(probability_color_mapping.items()):
+            legend_end_index = legend_start_index + j
+            vertical_offset = legend_spacing[0] + (j * legend_spacing[0])
+
+            point_cloud_sequence[legend_end_index] = [i, image_shape[0] / 2 + vertical_offset, 
+                                                          image_shape[1] + legend_spacing[1]]
+            color_sequence[legend_end_index] = color
+            point_sizes[legend_end_index] = 20
+            text_labels[legend_end_index] = probability_label
+
+    image_layer = viewer.add_points(point_cloud_sequence, name = "probabilities", border_color = "transparent",
+                                        face_color = color_sequence, size = point_sizes, symbol = "x", text = {
+                                            "string": text_labels, 
+                                            "color": "white", 
+                                            "size": 15,
+                                            "translation": np.array([0, 3, 50])
+                                        })
+    image_layer.visible = False
 
 def create_assignment_overlays(spatial_images, assignments, colormap, segmentation_mask = None):
     """creates a napari viewer with various visual overlays for cell assignments
@@ -196,7 +229,8 @@ def create_assignment_overlays(spatial_images, assignments, colormap, segmentati
     
     add_spatial_images(viewer, spatial_images, panel, markers_to_colors)
     add_cell_type_visualization(viewer, assignments, colormap, segmentation_mask)
-    add_probability_visualization(viewer, stratify_marker_probabilities(assignments), panel)
+    add_probability_visualization(viewer, stratify_marker_probabilities(assignments), panel, 
+                                      spatial_images["proteomic"][0].shape)
 
     napari.run()
 
