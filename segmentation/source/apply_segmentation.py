@@ -142,8 +142,8 @@ def apply_mesmer(compressed_images, segment_channel_name, save_path):
         save_path (str): parent destination where output (RGB images, segmentation masks) will be written under their own subdirectory (mesmer/segment_channel_name)
     """
 
-    from deepcell.applications import Mesmer
-    from deepcell.utils.plot_utils import make_outline_overlay, create_rgb_image
+    from deepcell.applications import Mesmer # type: ignore
+    from deepcell.utils.plot_utils import make_outline_overlay, create_rgb_image # type: ignore
 
     os.environ.update({"DEEPCELL_ACCESS_TOKEN" : "HcI12JDz.jBnsD080yqdai9s5f0LHZodVdEUpPimh"})
 
