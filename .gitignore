@@ -1,0 +1,5 @@
+# general
+.DS_Store
+
+# python
+__pycache__/

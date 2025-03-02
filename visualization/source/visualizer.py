@@ -1,7 +1,8 @@
-import numpy as np
-from tifffile import imread
 from matplotlib.patches import Circle
 import matplotlib.pyplot as plt
+import numpy as np
+import os
+from tifffile import imread
 
 def visualize_movable_circle(proteomic_path, histology_path, panel_path, markers, radius = 300):
     """visualizes a movable circle in histology and proteomic images with keyboard control; \
@@ -90,15 +91,27 @@ def visualize_movable_circle(proteomic_path, histology_path, panel_path, markers
             channels.append([channel / 2, 
                              channel / 2, 
                              np.zeros_like(channel)])
+        elif color == "blue":
+            channels.append([np.zeros_like(channel),
+                             np.zeros_like(channel),
+                             channel])
+        elif color == "orange":
+            channels.append([channel,
+                             channel / 2,
+                             np.zeros_like(channel)])
     
     cropped_proteomics = np.max(channels, axis = 0)
     
     spacing = np.zeros((3, 20, cropped_histology.shape[2]), dtype = cropped_histology.dtype)
     stacked_image = np.concatenate([cropped_histology, spacing, cropped_proteomics], axis = 1)
+
+    sample_name = os.path.splitext(os.path.basename(proteomic_path))[0]
     
     fig = plt.figure(figsize = (12, 8))
     
     plt.axis("off")
     plt.imshow(stacked_image.transpose(1, 2, 0))
-    plt.savefig("masked_regions.pdf", bbox_inches = "tight")
+   
+    plt.savefig(f"{sample_name}_masked_regions.pdf", bbox_inches = "tight")
+
     plt.close(fig)

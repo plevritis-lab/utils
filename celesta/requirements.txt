@@ -1,0 +1,10 @@
+magicgui==0.8.1
+matplotlib==3.7.0
+napari==0.5.6
+numpy==1.26.4
+pandas==2.2.0
+pyarrow==19.0.1
+PyQt5==5.15.10
+scipy==1.10.1
+seaborn==0.13.2
+tifffile==2023.12.9
