@@ -45,8 +45,7 @@ identify_cell_types <- function(quantified_imaging_data, signature_matrix, thres
     
     assignments$FINAL_CELL_TYPE <- gsub("Unknown", "unknown", assignments$FINAL_CELL_TYPE)
     
-    write.csv(cbind(quantified_imaging_data, marker_probabilities, assignments), 
-                  file.path(save_path, sprintf("%s_assignments.csv", basename(save_path))), row.names = FALSE)
+    write.csv(cbind(quantified_imaging_data, marker_probabilities, assignments), sprintf("%s_assignments.csv", save_path), row.names = FALSE)
 }
 
 #' parses command line arguments
@@ -92,17 +91,16 @@ main <- function() {
                                                              paste0(filter, "_cell_measurements.csv")]
     }
     
+    if (!dir.exists(save_path)) {
+        dir.create(save_path, recursive = T)
+    }
+    
     for (sample in sample_quantifications) {
         sample_data <- read.csv(sample);
         sample_name <- sub("\\_cell_measurements.csv$", "", basename(sample))
         sample_thresholds <- read.csv(file.path(thresholds_directory, paste0(sample_name, "_thresholds.csv")))
         
-        sample_save_path = file.path(save_path, sample_name)
-        if (!dir.exists(sample_save_path)) {
-            dir.create(sample_save_path, recursive = T)
-        }
-         
-        identify_cell_types(sample_data, signature_matrix, sample_thresholds, sample_save_path)
+        identify_cell_types(sample_data, signature_matrix, sample_thresholds, file.path(save_path, sample_name))
     }
 }
 
