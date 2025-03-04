@@ -41,10 +41,11 @@ def parse_arguments():
     """parses several command line arguments provided by the user (use --help to see the full list)"""
 
     parser = argparse.ArgumentParser(description = "interface for generating quality control spreadsheets")
-        
-    parser.add_argument("-c", "--condition", help = "condition that the samples are from")
+
     parser.add_argument("-d", "--clinical_data", help = "path to a clinical data spreadsheet that contains columns 'TMA', 'TMA_PART', and 'CORE_IMAGE_ID'")
     parser.add_argument("-p", "--panel_path", help = "path that points to the underlying location of the channel_names.txt file")
+    parser.add_argument("-s", "--save_path", help = "path where the generated quality control spreadsheet will be saved; \
+                                                     this argument will be suffixed by _quality_control.csv")
     
     return parser.parse_args() 
     
@@ -53,10 +54,10 @@ def main():
 
     clinical_data = arguments.clinical_data
     panel_path = arguments.panel_path
-    condition = arguments.condition
+    save_path = arguments.save_path
 
-    os.makedirs(os.path.dirname(condition), exist_ok = True)
+    os.makedirs(os.path.dirname(save_path), exist_ok = True)
 
-    generate_quality_control_spreadsheet(clinical_data, panel_path, condition)
+    generate_quality_control_spreadsheet(clinical_data, panel_path, save_path)
 
 main()
