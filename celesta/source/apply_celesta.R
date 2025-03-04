@@ -1,3 +1,7 @@
+suppressMessages(library(Rmixmod))
+suppressMessages(library(spData))
+suppressMessages(library(sf))
+
 library(argparse)
 library(Rmixmod)
 library(spdep)

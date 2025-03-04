@@ -31,7 +31,10 @@ Rscript "$CELESTA_SCRIPT" \
     --data_directory "$QUANTIFICATIONS_DIRECTORY" \
     --save_path "$ASSIGNMENTS_DIRECTORY" \
     --signature_matrix "$SIGNATURE_MATRIX" \
-    --thresholds_directory "$THRESHOLDS_DIRECTORY"
+    --thresholds_directory "$THRESHOLDS_DIRECTORY" \
+        > /dev/null 2> "$SCRIPT_DIRECTORY/celesta_warnings.txt"
+
+open -a "Microsoft Excel" "$SIGNATURE_MATRIX"
 
 for SAMPLE_DIRECTORY in "$IMAGE_DIRECTORY"/*; do
     SAMPLE_NAME=$(basename "$SAMPLE_DIRECTORY")
@@ -42,6 +45,8 @@ for SAMPLE_DIRECTORY in "$IMAGE_DIRECTORY"/*; do
         SAMPLE_ASSIGNMENTS="$IMAGE_DIRECTORY/assignments/${SAMPLE_NAME}_assignments.csv"
 
         SAMPLE_SEGMENTATION="$SAMPLE_DIRECTORY/full/$SEGMENTATION_METHOD/<TODO>/image_1_seg.npy"
+
+        open -a "Microsoft Excel" "$THRESHOLDS_DIRECTORY/${SAMPLE_NAME}_thresholds.csv"
         
         python3 "$VISUALIZATION_SCRIPT" \
             --assignments_path "$SAMPLE_ASSIGNMENTS" \
