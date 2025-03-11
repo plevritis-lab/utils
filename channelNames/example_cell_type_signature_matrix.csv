@@ -1,0 +1,16 @@
+Cell Type,Lineage Level,CD45,CD31,cytokeratin,FAP,CD3,CD4,CD19,CD56,CD8,Foxp3,CD25,CD11c,CD15,CD123,CD66,CD117
+Endothelial,1_0_1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+Epithelial,1_0_2,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0
+Fibroblast,1_0_3,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0
+Immune (general),1_0_4,1,0,0,0,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA
+Myeloid,2_4_5,NA,0,0,0,0,NA,0,0,NA,NA,NA,NA,NA,NA,1,1
+CD3+ T cell,2_4_6,NA,0,0,0,1,NA,0,0,NA,NA,NA,NA,NA,NA,0,0
+B cell,2_4_7,NA,0,0,0,0,NA,1,0,NA,NA,NA,NA,NA,NA,0,0
+NK cell,2_4_8,NA,0,0,0,0,NA,0,1,NA,NA,NA,NA,NA,NA,0,0
+Neutrophil ,3_5_9,NA,0,0,0,0,0,0,0,0,0,0,0,1,0,NA,NA
+pDC,3_5_10,NA,0,0,0,0,0,0,0,0,0,0,0,0,1,NA,NA
+cDC,3_5_11,NA,0,0,0,0,0,0,0,0,0,0,1,0,0,NA,NA
+CD4+T cell,4_6_12,NA,0,0,0,NA,1,0,0,0,NA,NA,0,0,0,0,0
+CD8+T cell,4_6_13,NA,0,0,0,NA,0,0,0,1,0,0,0,0,0,0,0
+Treg,5_12_14,NA,0,0,0,NA,1,0,0,0,1,1,0,0,0,0,0
+CD4+T cell,5_12_15,NA,0,0,0,NA,1,0,0,0,0,0,0,0,0,0,0

@@ -109,6 +109,7 @@ def main():
         save_path = os.path.join(save_path, os.path.basename(os.path.splitext(image_path)[0]))
     
         cellpose_segmentation = np.load(mask_path, allow_pickle = True).item()["outlines"]
+        breakpoint()
         quantify_expression(image, cellpose_segmentation, panel, save_path)
 
 if __name__ == "__main__":

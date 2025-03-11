@@ -288,6 +288,7 @@ def main():
         return
     
     image = imread(image_path) # (c, y, x)
+    image = np.reshape(image, (image.shape[0] * image.shape[1], image.shape[2], image.shape[3]))
 
     if len(segment_channel) > 1:
         image = construct_pseudochannel(image, segment_channel_index)

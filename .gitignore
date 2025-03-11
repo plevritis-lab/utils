@@ -1,5 +1,6 @@
 # general
 .DS_Store
-
+.venv
+images/
 # python
 __pycache__/

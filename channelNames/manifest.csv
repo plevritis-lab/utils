@@ -1,0 +1,4 @@
+"ID","name","versionNumber","contentType","dataFileSizeBytes","createdBy","createdOn","modifiedBy","modifiedOn","parentId","synapseURL","dataFileMD5Hex"
+"syn26532730","channelNames_7153_7155.txt","1","text/plain","738","3421133","1639074559871","3421133","1639074559871","syn26532727","https://www.synapse.org/#!Synapse:syn26532730.1","5c1ed004057e270cd1a7151945bfc83b"
+"syn26532731","channelNames_7233_7238_7240_7267_7268_7275.txt","1","text/plain","864","3421133","1639074561361","3421133","1639074561361","syn26532727","https://www.synapse.org/#!Synapse:syn26532731.1","0360ee21e9f3e6c25f10ca7c20ff7f3f"
+"syn26533539","example_cell_type_signature_matrix.csv","1","text/csv","910","3421133","1639101829042","3421133","1639101829042","syn26532727","https://www.synapse.org/#!Synapse:syn26533539.1","a0cd55b88d63a529a61e0e51a852f385"
