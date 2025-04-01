@@ -2,24 +2,19 @@ import argparse
 import os
 import pandas as pd
 
-def process_thresholds(clinical_data_path, signature_matrix_path, save_path):
+def process_thresholds(image_directory, signature_matrix_path, save_path):
     """generates or updates thresholds spreadsheets for spatial proteomics data
 
     args:
-        clinical_data_path (str): path to a CSV file containing clinical data
+        image_directory (str): path to a directory that contains image subdirectories
         signature_matrix_path (str): path to a CSV file containing a signature matrix
         save_path (str): path where the thresholds spreadsheets will be saved
     """
 
     signature_matrix = pd.read_csv(signature_matrix_path)
-    clinical_data = pd.read_csv(clinical_data_path)
     
-    expected_threshold_files = []    
-    for _, row in clinical_data.iterrows():
-        core_image_id = f"reg{int(row['CORE_IMAGE_ID']):03d}"
-        identifier = f"{row['TMA']}_{row['TMA_PART']}_{core_image_id}"
-        expected_threshold_files.append(f"{identifier}_thresholds.csv")
-    
+    expected_threshold_files = [f"{d}_thresholds.csv" for d in os.listdir(image_directory) if os.path.isdir(os.path.join(image_directory, d)) 
+                                    and d not in ["quantifications", "histology", "assignments"]]
     existing_threshold_files = [f for f in os.listdir(save_path) if f.endswith("_thresholds.csv")]
     
     for file in existing_threshold_files:
@@ -61,21 +56,21 @@ def parse_arguments():
 
     parser = argparse.ArgumentParser(description = "interface for generating thresholds spreadsheets")
 
-    parser.add_argument("-d", "--clinical_data", help = "path to a clinical data spreadsheet that contains columns 'TMA', 'TMA_PART', and 'CORE_IMAGE_ID'")
-    parser.add_argument("-s", "--save_path", help = "path where the generated thresholds spreadsheets will be saved")
+    parser.add_argument("-i", "--image_directory", help = "path to a directory that contains image subdirectories")
     parser.add_argument("-m", "--signature_matrix", help = "path that points to the underlying location of the signature matrix")
+    parser.add_argument("-s", "--save_path", help = "path where the generated thresholds spreadsheets will be saved")
     
     return parser.parse_args() 
     
 def main():
     arguments = parse_arguments()
 
-    clinical_data = arguments.clinical_data
-    save_path = arguments.save_path
+    image_directory = arguments.image_directory
     signature_matrix = arguments.signature_matrix
+    save_path = arguments.save_path
 
     os.makedirs(save_path, exist_ok = True)
 
-    process_thresholds(clinical_data, signature_matrix, save_path)
+    process_thresholds(image_directory, signature_matrix, save_path)
 
 main()

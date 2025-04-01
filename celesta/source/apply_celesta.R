@@ -100,7 +100,7 @@ main <- function() {
     }
     
     for (sample in sample_quantifications) {
-        sample_data <- read.csv(sample);
+        sample_data <- read.csv(sample)
         sample_name <- sub("\\_cell_measurements.csv$", "", basename(sample))
         sample_thresholds <- read.csv(file.path(thresholds_directory, paste0(sample_name, "_thresholds.csv")))
         

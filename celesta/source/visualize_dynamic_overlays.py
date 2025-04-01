@@ -236,7 +236,7 @@ def create_assignment_overlays(spatial_images, assignments, colormap, segmentati
 def parse_arguments():
     """parses several command line arguments provided by the user (use --help to see the full list)"""
 
-    parser = argparse.ArgumentParser(description = "interface for celesta assignment visualization through napari")
+    parser = argparse.ArgumentParser(description = "interface for dynamic celesta assignment visualization through napari")
 
     parser.add_argument("-a", "--assignments_path", help = "file path that points to the underlying location of the assignments.csv file")
     parser.add_argument("-c", "--colormap_path", help = "file path that points to the underlying location of the colormap.json file")
@@ -262,7 +262,7 @@ def main():
 
     print("\nvisualizing sample", os.path.basename(os.path.splitext(image_path)[0]))
 
-    assignments = pd.read_csv(assignments_path)
+    assignments = pd.read_csv(assignments_path).dropna()
 
     with open(colormap_path, "r") as file:
         cell_type_info = json.load(file)
