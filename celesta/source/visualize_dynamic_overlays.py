@@ -245,8 +245,8 @@ def parse_arguments():
     parser.add_argument("-e", "--histology_path", help = "(optional) file path that points to the underlying location of the histology TIF or TIFF file")
     parser.add_argument("-m", "--mask_path", help = "(optional) file path that points to the underlying location of the segmentation mask, stored as a .npy file")
 
-    parser.add_argument("--use_mesmer", action = "store_true", help = "toggle only if using a mesmer-generated segmentation mask")
-    parser.add_argument("--use_cellpose", action = "store_true", help = "toggle only if using a cellpose-generated segmentation mask")
+    parser.add_argument("--apply_mesmer", action = "store_true", help = "toggle only if using a mesmer-generated segmentation mask")
+    parser.add_argument("--apply_cellpose", action = "store_true", help = "toggle only if using a cellpose-generated segmentation mask")
 
     return parser.parse_args()
     
@@ -273,10 +273,10 @@ def main():
     
     segmentation_mask = None
 
-    if arguments.use_mesmer:
+    if arguments.apply_mesmer:
         segmentation_mask = np.load(mask_path, allow_pickle = True)
 
-    if arguments.use_cellpose:
+    if arguments.apply_cellpose:
         segmentation_mask = np.load(mask_path, allow_pickle = True).item()["outlines"]
     
     create_assignment_overlays(spatial_images, assignments, cell_type_info, segmentation_mask)

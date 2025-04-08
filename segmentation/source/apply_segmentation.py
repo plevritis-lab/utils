@@ -210,8 +210,6 @@ def overlay_masks(compressed_images, cellpose_segment_channel_name, mesmer_segme
 
         yellow_mask = cellpose_segmentation > 0 
         red_mask = mesmer_boundaries > 0 
-
-        # TODO - consider handcrafting a legend for the overlaid masks, with labels for the segment channel as well as red and yellow outlines (this requires a nontrivial fix without using matplotlib)
         
         overlaid_image[0, :, :][yellow_mask] = np.iinfo(overlaid_image.dtype).max
         overlaid_image[1, :, :][yellow_mask] = np.iinfo(overlaid_image.dtype).max # color cellpose mask Y 
@@ -223,8 +221,6 @@ def overlay_masks(compressed_images, cellpose_segment_channel_name, mesmer_segme
 
 def parse_arguments():
     """parses several command line arguments provided by the user (use --help to see the full list)"""
-
-    # TODO - make this argument list a little nicer (have something like 'git commit <args>' and 'git merge <args>') but for this, i.e., 'apply_segmentation segment <args>' and 'apply_segmentation overlay <args>'
 
     parser = argparse.ArgumentParser(description = "interface for applying cellular segmentation algorithms, mesmer and cellpose; \
                                                     it is recommended to choose a cytoplasmic + nuclear combination for cellpose; \

@@ -64,8 +64,8 @@ def parse_arguments():
                                                       this argument is optional and should only be used when metadata parsing fails")
     parser.add_argument("-s", "--save_path", help = "directory path that points to the underlying location where output will be written")
 
-    parser.add_argument("--use_mesmer", action = "store_true", help = "toggle only if using a mesmer-generated segmentation mask")
-    parser.add_argument("--use_cellpose", action = "store_true", help = "toggle only if using a cellpose-generated segmentation mask")
+    parser.add_argument("--apply_mesmer", action = "store_true", help = "toggle only if using a mesmer-generated segmentation mask")
+    parser.add_argument("--apply_cellpose", action = "store_true", help = "toggle only if using a cellpose-generated segmentation mask")
 
     return parser.parse_args()
 
@@ -95,7 +95,7 @@ def main():
 
     image = imread(image_path) # (c, y, x)
     
-    if arguments.use_mesmer:
+    if arguments.apply_mesmer:
         save_path = os.path.join(save_path, "quantifications", "mesmer")
         os.makedirs(save_path, exist_ok = True)
         save_path = os.path.join(save_path, os.path.basename(os.path.splitext(image_path)[0]))
@@ -103,7 +103,7 @@ def main():
         mesmer_segmentation = np.load(mask_path, allow_pickle = True)
         quantify_expression(image, mesmer_segmentation, panel, save_path)
     
-    if arguments.use_cellpose:
+    if arguments.apply_cellpose:
         save_path = os.path.join(save_path, "quantifications", "cellpose")
         os.makedirs(save_path, exist_ok = True)
         save_path = os.path.join(save_path, os.path.basename(os.path.splitext(image_path)[0]))
