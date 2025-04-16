@@ -61,9 +61,9 @@ identify_cell_types <- function(quantified_imaging_data, signature_matrix, thres
 parse_arguments <- function() {
     parser <- ArgumentParser(description = "batch celesta processing of spatial proteomics files")
     
-    parser$add_argument("--data_directory", help = "path to a data directory of .csv files", required = TRUE)
-    parser$add_argument("--filter", help = "comma-separated list of sample names to process, or 'all' to process everything; \
-                                            defaults to all", default = "all")
+    parser$add_argument("--data_directory", help = "path to a data directory of cell measurement .csv files", required = TRUE)
+    parser$add_argument("--filter", default = "all", help = "comma-separated list of sample names to process, or 'all' to process everything; \
+                                                             defaults to 'all'")
     parser$add_argument("--save_path", help = "path to save celesta's output files", required = TRUE)
     parser$add_argument("--signature_matrix", help = "path to the signature matrix", required = TRUE)
     parser$add_argument("--thresholds_directory", help = "path to a thresholds directory of .csv files", required = TRUE)
