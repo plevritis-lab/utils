@@ -4,7 +4,7 @@ import os
 import pandas as pd
 from skimage.measure import regionprops
 from tifffile import imread
-from utils import extract_proteomic_panel
+from segmentation.source.utils import extract_proteomic_panel
 import xml.etree.ElementTree as ET
 
 def quantify_expression(image, segmentation_mask, panel, save_path):

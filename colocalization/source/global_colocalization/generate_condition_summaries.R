@@ -4,7 +4,7 @@ library(dplyr)
 library(rlang)
 library(tidyr)
 
-devtools::load_all("/Users/rohit/Desktop/utils/colocalization/source/global_colocalization/metadisco")
+devtools::load_all("colocalization/source/global_colocalization/metadisco")
 
 #' computes cell counts for all samples in a directory
 #'
@@ -26,6 +26,7 @@ compute_cell_counts <- function(files, save_path, cell_types) {
         sample_name <- sub("_assignments\\.csv$", "", basename(file))
 
         sample_assignments <- read.csv(file) |>
+            dplyr::filter(!is.na(.data$FINAL_CELL_TYPE)) |>
             dplyr::count(.data$FINAL_CELL_TYPE) |>
             tidyr::complete(FINAL_CELL_TYPE = factor(.data$FINAL_CELL_TYPE, levels = cell_types), fill = list(n = 0)) |>
             dplyr::rename(!!sample_name := .data$n)

@@ -11,7 +11,7 @@ from sklearn.metrics import silhouette_score
 from sklearn.neighbors import NearestNeighbors
 import umap
 
-def __concatenate_spatial_embeddings(condition):
+def concatenate_spatial_embeddings(condition):
     """concatenates LCLQ spatial embeddings across all images from a user-specified condition (only "complete" embeddings are retained)
 
     args:
@@ -41,7 +41,7 @@ def __concatenate_spatial_embeddings(condition):
 
     return condition_spatial_embeddings
 
-def __plot_data_distributions(A_cells, A, save_path):
+def plot_data_distributions(A_cells, A, save_path):
     """plots and saves a series of images visualizing LCLQ distributions between all cell type pairs involving A
 
     args:
@@ -63,7 +63,7 @@ def __plot_data_distributions(A_cells, A, save_path):
         fig.savefig(os.path.join(save_path, f"histogram_{cell_type}.pdf"))
         plt.close(fig)
 
-def __reduce_data_dimensionality(A_cells, A, color_by, save_path, method = "PCA"):
+def reduce_data_dimensionality(A_cells, A, color_by, save_path, method = "PCA"):
     """reduces the dimensionality of A's LCLQ spatial embeddings to 2 by performing PCA or UMAP, saving the ensuing visualization
 
     args:
@@ -119,7 +119,7 @@ def __reduce_data_dimensionality(A_cells, A, color_by, save_path, method = "PCA"
     
     plt.close(fig)
 
-def __cluster_cell_type_embeddings(A_cells, A, save_path, method = "k_means"):
+def cluster_cell_type_embeddings(A_cells, A, save_path, method = "k_means"):
     """clusters LCLQ spatial embeddings for a user-provided cell type (amenable to both per-image and per-condition clustering), saving results from an accompanying silhouette and elbow analysis to determine optimal k
 
     args:
@@ -225,7 +225,7 @@ def __cluster_cell_type_embeddings(A_cells, A, save_path, method = "k_means"):
         cluster_labels = DBSCAN(eps = optimal_epsilon, min_samples = min_samples).fit_predict(A_embeddings)
         A_cells["CLUSTER"] = cluster_labels
 
-def __save_spatial_clusters(A_cells, A, save_path):
+def save_spatial_clusters(A_cells, A, save_path):
     """plots and saves the identified colocalization states, mapping them back to their original location in the image, as well as a LCLQ cluster summary spreadsheet
     
     args:
@@ -284,7 +284,7 @@ def cluster_spatial_embeddings(condition, log_normalization = True):
 
     matplotlib.use("agg")
 
-    cell_embedding_matrix = __concatenate_spatial_embeddings(condition)
+    cell_embedding_matrix = concatenate_spatial_embeddings(condition)
 
     if log_normalization:
         normalize_columns = cell_embedding_matrix.columns.difference(["FINAL_CELL_TYPE", "REGION", "N", "X", "Y", "SAMPLE"])
@@ -296,14 +296,14 @@ def cluster_spatial_embeddings(condition, log_normalization = True):
     for A in unique_cell_types:
         A_cells = cell_embedding_matrix[cell_embedding_matrix["FINAL_CELL_TYPE"] == A].drop(columns = "FINAL_CELL_TYPE")
 
-        # __plot_data_distributions(A_cells, A, condition)
-        # __reduce_data_dimensionality(A_cells, A, "REGION", condition, method = "PCA")
-        # __reduce_data_dimensionality(A_cells, A, "REGION", condition, method = "UMAP")
-        # __reduce_data_dimensionality(A_cells, A, "N", condition, method = "PCA")
-        # __reduce_data_dimensionality(A_cells, A, "N", condition, method = "UMAP")
-        __cluster_cell_type_embeddings(A_cells, A, condition, method = "k_means")
-        # __cluster_cell_type_embeddings(A_cells, A, condition, method = "DBSCAN")
-        __save_spatial_clusters(A_cells, A, condition)
+        # plot_data_distributions(A_cells, A, condition)
+        # reduce_data_dimensionality(A_cells, A, "REGION", condition, method = "PCA")
+        # reduce_data_dimensionality(A_cells, A, "REGION", condition, method = "UMAP")
+        # reduce_data_dimensionality(A_cells, A, "N", condition, method = "PCA")
+        # reduce_data_dimensionality(A_cells, A, "N", condition, method = "UMAP")
+        cluster_cell_type_embeddings(A_cells, A, condition, method = "k_means")
+        # cluster_cell_type_embeddings(A_cells, A, condition, method = "DBSCAN")
+        save_spatial_clusters(A_cells, A, condition)
 
         A_cells["FINAL_CELL_TYPE"] = A
 
@@ -312,7 +312,7 @@ def cluster_spatial_embeddings(condition, log_normalization = True):
     cluster_dataframes = pd.concat(cluster_dataframes, ignore_index = True)
     cluster_dataframes.to_csv("microarray_clusters.csv", index = False)
 
-if __name__ == "__main__":
+if name == "main":
     # conditions = ["../output/microarray_cores/center/negative", 
     #               "../output/microarray_cores/center/positive",
     #               "../output/microarray_cores/edge/negative",

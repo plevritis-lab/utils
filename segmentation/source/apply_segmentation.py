@@ -4,7 +4,7 @@ import numpy as np
 import os
 from skimage.segmentation import find_boundaries
 from tifffile import imread, imwrite
-from utils import extract_proteomic_panel
+from segmentation.source.utils import extract_proteomic_panel
 import warnings
 import xml.etree.ElementTree as ET
 

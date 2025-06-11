@@ -27,14 +27,14 @@ def process_thresholds(image_directory, signature_matrix_path, save_path):
                 rows.append({
                     "CELL_TYPE": cell_type,
                     "ANCHOR": row["ANCHOR"],
-                    "INDEX": row["INDEX"]
+                    "ITERATION": row["ITERATION"]
                 })
 
             else:
                 rows.append({
                     "CELL_TYPE": cell_type,
                     "ANCHOR": 0.7,
-                    "INDEX": 0.5
+                    "ITERATION": 0.5
                 })
         
         updated_thresholds = pd.DataFrame(rows)
@@ -46,7 +46,7 @@ def process_thresholds(image_directory, signature_matrix_path, save_path):
         thresholds = pd.DataFrame({
             "CELL_TYPE": signature_matrix["CELL_TYPE"],
             "ANCHOR": [0.7] * len(signature_matrix),
-            "INDEX": [0.5] * len(signature_matrix)
+            "ITERATION": [0.5] * len(signature_matrix)
         })
         
         thresholds.to_csv(os.path.join(save_path, file), index = False)
