@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 import pandas as pd
+import re
 from skimage.io import imread, imsave
 from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans, DBSCAN
@@ -22,12 +23,12 @@ def concatenate_spatial_embeddings(condition):
 
     for root, _, files in os.walk(condition):
         for file in files:
-            if file == "spatial_embeddings.csv":
+            if "local_colocalization_matrix" in file:
                 path_parts = root.split(os.path.sep)
-                regionalization = path_parts[3]
-                nodal_status = path_parts[4]
-                sample_name = path_parts[5]
-
+                regionalization = path_parts[-4]
+                nodal_status = path_parts[-3]
+                sample_name = re.match(r"([A-Za-z0-9_]+)_local_colocalization_matrix", file).group(1)
+                
                 cell_embedding_matrix = pd.read_csv(os.path.join(root, file))
 
                 cell_embedding_matrix["REGION"] = regionalization
@@ -37,7 +38,6 @@ def concatenate_spatial_embeddings(condition):
                 condition_spatial_embeddings.append(cell_embedding_matrix)
 
     condition_spatial_embeddings = pd.concat(condition_spatial_embeddings, ignore_index = True)
-    condition_spatial_embeddings = condition_spatial_embeddings.dropna().reset_index(drop = True)
 
     return condition_spatial_embeddings
 
@@ -60,7 +60,7 @@ def plot_data_distributions(A_cells, A, save_path):
 
         ax.hist(A_cells[cell_type])
         
-        fig.savefig(os.path.join(save_path, f"histogram_{cell_type}.pdf"))
+        fig.savefig(os.path.join(save_path, f"histogram_{cell_type}.png"), dpi = 300)
         plt.close(fig)
 
 def reduce_data_dimensionality(A_cells, A, color_by, save_path, method = "PCA"):
@@ -78,10 +78,11 @@ def reduce_data_dimensionality(A_cells, A, color_by, save_path, method = "PCA"):
     regionalization = A_cells["REGION"].values
     nodal_status = A_cells["N"].values
 
-    print(regionalization)
-    print(nodal_status)
+    # print(regionalization)
+    # print(nodal_status)
 
     A_cells = A_cells.drop(columns = ["REGION", "N", "X", "Y", "SAMPLE"])
+    A_cells = A_cells.fillna(0)
 
     if method == "PCA":
         reduced_representation = PCA(n_components = 2).fit_transform(A_cells)
@@ -93,16 +94,16 @@ def reduce_data_dimensionality(A_cells, A, color_by, save_path, method = "PCA"):
 
     if color_by != "NONE":
         if color_by == "REGION":
-            subset_one = reduced_representation[np.where(regionalization == "center")]
-            subset_two = reduced_representation[np.where(regionalization == "edge")]
+            subset_one = reduced_representation[np.where(regionalization == "centers")]
+            subset_two = reduced_representation[np.where(regionalization == "edges")]
 
-            labels = ["center", "edge"]
+            labels = ["centers", "edges"]
         
         elif color_by == "N":
-            subset_one = reduced_representation[np.where(nodal_status == "positive")]
-            subset_two = reduced_representation[np.where(nodal_status == "negative")]
+            subset_one = reduced_representation[np.where(nodal_status == "node_positive")]
+            subset_two = reduced_representation[np.where(nodal_status == "node_negative")]
 
-            labels = ["positive", "negative"]
+            labels = ["node_positive", "node_negative"]
 
         ax.scatter(subset_one[:, 0], subset_one[:, 1], color = "blue", alpha = 0.5, label = labels[0])
         ax.scatter(subset_two[:, 0], subset_two[:, 1], color = "red", alpha = 0.5, label = labels[1])
@@ -115,7 +116,7 @@ def reduce_data_dimensionality(A_cells, A, color_by, save_path, method = "PCA"):
     save_path = os.path.join(save_path, method)
     os.makedirs(save_path, exist_ok = True)
 
-    fig.savefig(os.path.join(save_path, f"{method}_{A}_{color_by}.pdf"))
+    fig.savefig(os.path.join(save_path, f"{method}_{A}_{color_by}.png"), dpi = 300)
     
     plt.close(fig)
 
@@ -135,6 +136,7 @@ def cluster_cell_type_embeddings(A_cells, A, save_path, method = "k_means"):
     # TODO - improve quality of clusters (silhouette score is very low, maybe try a different clustering algorithm or the elbow method - do the latter?!)
 
     A_embeddings = A_cells.drop(columns = ["REGION", "N", "X", "Y", "SAMPLE"])
+    A_embeddings = A_embeddings.fillna(0)
 
     if method == "k_means":
         K = list(range(2, min(A_embeddings.shape[0], 11)))
@@ -285,6 +287,9 @@ def cluster_spatial_embeddings(condition, log_normalization = True):
     matplotlib.use("agg")
 
     cell_embedding_matrix = concatenate_spatial_embeddings(condition)
+    
+    condition = os.path.join(condition, "local_spatial_summary")
+    os.makedirs(condition, exist_ok = True)
 
     if log_normalization:
         normalize_columns = cell_embedding_matrix.columns.difference(["FINAL_CELL_TYPE", "REGION", "N", "X", "Y", "SAMPLE"])
@@ -310,9 +315,9 @@ def cluster_spatial_embeddings(condition, log_normalization = True):
         cluster_dataframes.append(A_cells)
 
     cluster_dataframes = pd.concat(cluster_dataframes, ignore_index = True)
-    cluster_dataframes.to_csv("microarray_clusters.csv", index = False)
+    cluster_dataframes.to_csv(os.path.join(condition, "microarray_clusters.csv"), index = False)
 
-if name == "main":
+if __name__ == "__main__":
     # conditions = ["../output/microarray_cores/center/negative", 
     #               "../output/microarray_cores/center/positive",
     #               "../output/microarray_cores/edge/negative",
@@ -325,8 +330,7 @@ if name == "main":
             
     #         cluster_spatial_embeddings(sub_directory)
 
-    cluster_spatial_embeddings("/Users/rohit/Desktop/temp/output/microarray_cores")
-
+    cluster_spatial_embeddings("/Users/rohit/Desktop/plevritis_analysis/data/primary_tumors")
 
 '''
     # TODO - THINGS TO TRY MYSELF FOR SANITY CHECKS
