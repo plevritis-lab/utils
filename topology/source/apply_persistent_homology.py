@@ -6,6 +6,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import pandas as pd
 import re
+from sklearn.preprocessing import MinMaxScaler
 
 def plot_persistence_diagram_density(persistence, A, save_path):
     """plots a persistence diagram and its density for a given cell type A
@@ -35,10 +36,10 @@ def featurize_cell_type_topology(cells):
         cells (dataframe): dataframe containing cell coordinates X and Y
     """
 
-    centroids = cells[["X", "Y"]].values
+    centroids = MinMaxScaler().fit_transform(cells[["X", "Y"]])
 
-    rips_complex = gudhi.RipsComplex(points = centroids)
-    simplex_tree = rips_complex.create_simplex_tree(max_dimension = 2)
+    alpha_complex = gudhi.AlphaComplex(points = centroids)
+    simplex_tree = alpha_complex.create_simplex_tree()
     persistence = simplex_tree.persistence()
 
     return persistence
@@ -62,7 +63,7 @@ def compute_topological_features(assignments, save_path, sample_name, cell_types
     for A in unique_cell_types:
         A_cells = assignments[assignments["FINAL_CELL_TYPE"] == A]
 
-        if len(A) < count_criteria:
+        if len(A_cells) < count_criteria:
             print("skipping cell type", A, "in sample", sample_name, "due to insufficient points")
 
             persistence_data = [
@@ -128,7 +129,7 @@ def driver(assignments_directory, signature_matrix, save_path, filter, count_cri
         
         unique_cell_types = assignments["FINAL_CELL_TYPE"].unique()
         for A in unique_cell_types:
-            if len(A) >= count_criteria:
+            if len(assignments[assignments["FINAL_CELL_TYPE"] == A]) >= count_criteria:
                 plot_persistence_diagram_density(persistent_homology_features[A], A, sample_visualizations_directory)
 
 def parse_arguments():

@@ -52,17 +52,29 @@ generate_colocalization_heatmap <- function(data, cell_types, counts_one, counts
     # combined <- proportions / heatmap + patchwork::plot_layout(heights = c(1, 5))
     # combined
 
-    ggplot2::ggsave("/Users/rohit/Downloads/colocalization_heatmap.pdf", heatmap, width = 10, height = 10, dpi = 300)
+    ggplot2::ggsave("/Users/rohit/Downloads/figures/colocalization_heatmap_negative_positive_wilcox_test_with_correction.pdf", heatmap, width = 10, height = 10, dpi = 300)
     heatmap
 }
 
-colocalization_one <- read.csv("/Users/rohit/Downloads/global_colocalizations/node_positive_global_colocalization_matrix_untransformed_linear_weighting_15_neighbors_100_pixel_bandwidth.csv")
-colocalization_two <- read.csv("/Users/rohit/Downloads/global_colocalizations/node_negative_global_colocalization_matrix_untransformed_linear_weighting_15_neighbors_100_pixel_bandwidth.csv")
+centers_negative <- read.csv("/Users/rohit/Desktop/plevritis_analysis/data/primary_tumors/centers/node_negative/colocalizations/global_colocalizations/assignments_global_colocalization_matrix_untransformed_linear_weighting_15_neighbors_100_pixel_bandwidth.csv")
+centers_positive <- read.csv("/Users/rohit/Desktop/plevritis_analysis/data/primary_tumors/centers/node_positive/colocalizations/global_colocalizations/assignments_global_colocalization_matrix_untransformed_linear_weighting_15_neighbors_100_pixel_bandwidth.csv")
+edges_negative <- read.csv("/Users/rohit/Desktop/plevritis_analysis/data/primary_tumors/edges/node_negative/colocalizations/global_colocalizations/assignments_global_colocalization_matrix_untransformed_linear_weighting_15_neighbors_100_pixel_bandwidth.csv")
+edges_positive <- read.csv("/Users/rohit/Desktop/plevritis_analysis/data/primary_tumors/edges/node_positive/colocalizations/global_colocalizations/assignments_global_colocalization_matrix_untransformed_linear_weighting_15_neighbors_100_pixel_bandwidth.csv")
+
+colocalization_one <- merge(centers_negative, centers_positive, by = "A_B", suffixes = c("_negative", "_positive"))
+colocalization_one <- colocalization_one[, !duplicated(names(colocalization_one))]
+colocalization_two <- merge(edges_negative, edges_positive, by = "A_B", suffixes = c("_negative", "_positive"))
+colocalization_two <- colocalization_two[, !duplicated(names(colocalization_two))]
+
+# colocalization_one <- merge(centers_negative, edges_negative, by = "A_B", suffixes = c("_centers", "_edges"))
+# colocalization_one <- colocalization_one[, !duplicated(names(colocalization_one))]
+# colocalization_two <- merge(centers_positive, edges_positive, by = "A_B", suffixes = c("_centers", "_edges"))
+# colocalization_two <- colocalization_two[, !duplicated(names(colocalization_two))]
 
 # counts_one <- read.csv("/Users/rohit/Downloads/counts/innpd_count_matrix.csv")
 # counts_two <- read.csv("/Users/rohit/Downloads/counts/nnpd_count_matrix.csv")
 
-signature_matrix <- read.csv("/Users/rohit/Downloads/signature_matrix.csv")
+signature_matrix <- read.csv("/Users/rohit/Desktop/plevritis_analysis/celesta/signature_matrices/primary_tumors/centers/node_negative/center_negative_signature_matrix.csv")
 
 colocalization_one <- colocalization_one[!apply(is.na(colocalization_one[, !(names(colocalization_one) == "A_B")]), 1, all), ]
 colocalization_two <- colocalization_two[!apply(is.na(colocalization_two[, !(names(colocalization_two) == "A_B")]), 1, all), ]
@@ -86,13 +98,14 @@ t_test_results <- lapply(seq_along(shared_rows), function(i) {
     y <- y[!is.na(y)]
 
     if (length(x) >= 2 && length(y) >= 2) {
-        t.test(x, y)
+        wilcox.test(x, y)
     } else {
         list(p.value = NA, error = "insufficient data")
     }
 })
 
 p_values <- sapply(t_test_results, function(colocation) colocation$p.value)
+p_values <- p.adjust(p_values, method = "fdr")
 
 condition_one_mean <- rowMeans(one_data, na.rm = TRUE)
 condition_two_mean <- rowMeans(two_data, na.rm = TRUE)
