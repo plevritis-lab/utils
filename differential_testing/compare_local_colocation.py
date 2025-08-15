@@ -32,7 +32,7 @@ plt.xlabel("Proportion of Cells")
 plt.ylabel("Cell Type")
 plt.legend(title="Cluster", bbox_to_anchor=(1.05, 1), loc="upper left")
 plt.tight_layout()
-plt.savefig("/Users/rohit/Downloads/figures/cluster_proportion_by_cell_type.png", dpi=300)
+plt.savefig("/Users/rohit/Downloads/figures_v2/cluster_proportion_by_cell_type.png", dpi=300)
 
 results = []
 residuals_dict = {}
@@ -40,7 +40,7 @@ residuals_dict = {}
 # Loop through each cell type
 for cell_type, group in df.groupby("FINAL_CELL_TYPE"):
     # Contingency table: rows = clusters, columns = conditions (e.g., REGION)
-    contingency = pd.crosstab(group['CLUSTER'], group['REGION'])
+    contingency = pd.crosstab(group['CLUSTER'], group['N'])
 
     # Skip if only one condition present (can't test across conditions)
     if contingency.shape[1] < 2:
@@ -91,65 +91,65 @@ plt.ylabel('cell type ')
 plt.title('cluster distribution differences across conditions')
 plt.legend(title='significant')
 plt.tight_layout()
-plt.savefig("/Users/rohit/Downloads/figures/cluster_distribution_differences_across_conditions.png", dpi=300)
+plt.savefig("/Users/rohit/Downloads/figures_v2/cluster_distribution_differences_across_conditions.png", dpi=300)
 
 # (OPTION 1) - SEQUENTIAL # Plot residuals for significant Chi2-tested cell types
-# for cell_type in results_df[(results_df['significant']) & (results_df['test_type'] == 'chi2')]['FINAL_CELL_TYPE']:
-#     res = residuals_dict[cell_type]
+for cell_type in results_df[(results_df['significant']) & (results_df['test_type'] == 'chi2')]['FINAL_CELL_TYPE']:
+    res = residuals_dict[cell_type]
 
-#     plt.figure(figsize=(8, 4))
-#     sns.heatmap(res, annot=True, center=0, cmap='vlag', fmt=".2f")
-#     plt.title(f"{cell_type} - Standardized Residuals (Cluster x Condition)")
-#     plt.xlabel('Condition')
-#     plt.ylabel('Cluster')
-#     plt.tight_layout()
-#     plt.savefig(f"/Users/rohit/Downloads/figures/residuals_{cell_type.replace(' ', '_')}.png", dpi=300)
-#     plt.close()
+    plt.figure(figsize=(8, 4))
+    sns.heatmap(res, annot=True, center=0, cmap='vlag', fmt=".2f")
+    plt.title(f"{cell_type} - Standardized Residuals (Cluster x Condition)")
+    plt.xlabel('Condition')
+    plt.ylabel('Cluster')
+    plt.tight_layout()
+    plt.savefig(f"/Users/rohit/Downloads/figures_v2/residuals_{cell_type.replace(' ', '_')}.png", dpi=300)
+    plt.close()
 
 # (OPTION 2) - SINGLE HEATMAP Combine all significant chi2 residuals into a single heatmap
-# sig_chi2_types = results_df[(results_df['significant']) & (results_df['test_type'] == 'chi2')]['FINAL_CELL_TYPE']
+sig_chi2_types = results_df[(results_df['significant']) & (results_df['test_type'] == 'chi2')]['FINAL_CELL_TYPE']
 
-# # Collect residuals into a MultiIndex DataFrame: (Cell Type, Cluster) x Condition
-# residuals_list = []
-# for cell_type in sig_chi2_types:
-#     res = residuals_dict[cell_type]
-#     # Add cell type as a column for later stacking
-#     res = res.copy()
-#     res['FINAL_CELL_TYPE'] = cell_type
-#     residuals_list.append(res.reset_index())
+# Collect residuals into a MultiIndex DataFrame: (Cell Type, Cluster) x Condition
+residuals_list = []
+for cell_type in sig_chi2_types:
+    res = residuals_dict[cell_type]
+    # Add cell type as a column for later stacking
+    res = res.copy()
+    res['FINAL_CELL_TYPE'] = cell_type
+    residuals_list.append(res.reset_index())
 
-# if residuals_list:
-#     all_residuals = pd.concat(residuals_list, ignore_index=True)
-#     # Melt for heatmap: rows = (Cell Type, Cluster), columns = Condition
-#     melted = all_residuals.melt(
-#         id_vars=['FINAL_CELL_TYPE', 'CLUSTER'],
-#         var_name='CONDITION',
-#         value_name='RESIDUAL'
-#     )
-#     # Remove rows where CONDITION is 'FINAL_CELL_TYPE' (from melt)
-#     melted = melted[melted['CONDITION'] != 'FINAL_CELL_TYPE']
+if residuals_list:
+    all_residuals = pd.concat(residuals_list, ignore_index=True)
+    # Melt for heatmap: rows = (Cell Type, Cluster), columns = Condition
+    melted = all_residuals.melt(
+        id_vars=['FINAL_CELL_TYPE', 'CLUSTER'],
+        var_name='CONDITION',
+        value_name='RESIDUAL'
+    )
+    # Remove rows where CONDITION is 'FINAL_CELL_TYPE' (from melt)
+    melted = melted[melted['CONDITION'] != 'FINAL_CELL_TYPE']
 
-#     # Pivot for heatmap
-#     heatmap_data = melted.pivot_table(
-#         index=['FINAL_CELL_TYPE', 'CLUSTER'],
-#         columns='CONDITION',
-#         values='RESIDUAL'
-#     )
+    # Pivot for heatmap
+    heatmap_data = melted.pivot_table(
+        index=['FINAL_CELL_TYPE', 'CLUSTER'],
+        columns='CONDITION',
+        values='RESIDUAL'
+    )
 
-#     plt.figure(figsize=(min(20, 2 + 0.5 * heatmap_data.shape[0]), 1 + 0.5 * heatmap_data.shape[0]))
-#     sns.heatmap(
-#         heatmap_data,
-#         annot=False,
-#         center=0,
-#         cmap='vlag',
-#         cbar_kws={'label': 'Standardized Residual'}
-#     )
-#     plt.title("Standardized Residuals for Significant Cell Types (Cluster x Condition)")
-#     plt.xlabel('Condition')
-#     plt.ylabel('Cell Type / Cluster')
-#     plt.tight_layout()
-#     plt.savefig("/Users/rohit/Downloads/figures/all_significant_residuals_heatmap.png", dpi=300)
-#     plt.close()
+    plt.figure(figsize=(min(20, 2 + 0.5 * heatmap_data.shape[0]), 1 + 0.5 * heatmap_data.shape[0]))
+    sns.heatmap(
+        heatmap_data,
+        annot=False,
+        center=0,
+        cmap='vlag',
+        cbar_kws={'label': 'Standardized Residual'}
+    )
+    plt.title("Standardized Residuals for Significant Cell Types (Cluster x Condition)")
+    plt.xlabel('Condition')
+    plt.ylabel('Cell Type / Cluster')
+    plt.tight_layout()
+    plt.savefig("/Users/rohit/Downloads/figures_v2/all_significant_residuals_heatmap.png", dpi=300)
+    plt.close()
 
 # (OPTION 3) Flatten all residuals into a long DataFrame
 residual_rows = []
@@ -188,5 +188,5 @@ plt.title("all cell type × cluster × condition residuals")
 plt.xlabel("condition")
 plt.ylabel("cell type | cluster")
 plt.tight_layout()
-plt.savefig("/Users/rohit/Downloads/figures/all_celltype_cluster_condition_residuals_heatmap.png", dpi=300)
+plt.savefig("/Users/rohit/Downloads/figures_v2/all_celltype_cluster_condition_residuals_heatmap.png", dpi=300)
 plt.close()

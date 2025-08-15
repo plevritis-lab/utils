@@ -23,11 +23,14 @@ edges_positive = "/Users/rohit/Desktop/plevritis_analysis/data/primary_tumors/ed
 
 centers_negative = pd.read_csv(centers_negative)
 centers_positive = pd.read_csv(centers_positive)
-centers = pd.merge(centers_negative, centers_positive, on = "FINAL_CELL_TYPE")
+# centers = pd.merge(centers_negative, centers_positive, on = "FINAL_CELL_TYPE")
 
 edges_negative = pd.read_csv(edges_negative)
 edges_positive = pd.read_csv(edges_positive)
-edges = pd.merge(edges_negative, edges_positive, on = "FINAL_CELL_TYPE")
+# edges = pd.merge(edges_negative, edges_positive, on = "FINAL_CELL_TYPE")
+
+centers = pd.merge(centers_negative, edges_negative, on="FINAL_CELL_TYPE")
+edges = pd.merge(centers_positive, edges_positive, on="FINAL_CELL_TYPE")
 
 with open(colormap, "r") as file:
     colormap = json.load(file)
@@ -91,8 +94,8 @@ def plot_global_proportions(centers, edges, colormap):
     legend_fig.tight_layout()
     fig.tight_layout()
 
-    fig.savefig("/Users/rohit/Downloads/figures/proportions.png", dpi = 300)
-    legend_fig.savefig("/Users/rohit/Downloads/figures/proportions_legend.png", dpi = 300)
+    fig.savefig("/Users/rohit/Downloads/figures_v2/proportions.png", dpi = 300)
+    legend_fig.savefig("/Users/rohit/Downloads/figures_v2/proportions_legend.png", dpi = 300)
 
     plt.close(legend_fig)
     plt.close(fig)
@@ -144,7 +147,7 @@ def plot_principal_coordinates_analysis(condition, distance_matrix):
 
     fig.tight_layout()
     
-    fig.savefig("/Users/rohit/Downloads/figures/pcoa.png", dpi = 300)
+    fig.savefig("/Users/rohit/Downloads/figures_v2/pcoa.png", dpi = 300)
 
     plt.close(fig)
 
@@ -201,102 +204,102 @@ def plot_significant_barplot(centers, edges, results_df):
     sns.barplot(data=df, x="proportion", y="cell_type", hue="group")
     plt.title("significantly different cell types (fdr < 0.05)")
     plt.tight_layout()
-    plt.savefig("/Users/rohit/Downloads/figures/significant_barplot.png", dpi=300)
+    plt.savefig("/Users/rohit/Downloads/figures_v2/significant_barplot.png", dpi=300)
     plt.close()
 
 results = test_cell_type_differences(centers, edges)
 
 plot_significant_barplot(centers, edges, results)
 
-# def plot_volcano(results_df, centers, edges):
-#     centers = centers.set_index("FINAL_CELL_TYPE")
-#     edges = edges.set_index("FINAL_CELL_TYPE")
+def plot_volcano(results_df, centers, edges):
+    centers = centers.set_index("FINAL_CELL_TYPE")
+    edges = edges.set_index("FINAL_CELL_TYPE")
 
-#     mean_centers = centers.mean(axis=1)
-#     mean_edges = edges.mean(axis=1)
-#     logfc = np.log2((mean_edges + 1e-6) / (mean_centers + 1e-6))
+    mean_centers = centers.mean(axis=1)
+    mean_edges = edges.mean(axis=1)
+    logfc = np.log2((mean_edges + 1e-6) / (mean_centers + 1e-6))
 
-#     results_df["log2_fc"] = logfc.values
-#     results_df["-log10_p"] = -np.log10(results_df["adj_p_value"] + 1e-10)
+    results_df["log2_fc"] = logfc.values
+    results_df["-log10_p"] = -np.log10(results_df["adj_p_value"] + 1e-10)
 
-#     plt.figure(figsize=(10, 7))
-#     ax = sns.scatterplot(
-#         data=results_df,
-#         x="log2_fc",
-#         y="-log10_p",
-#         hue="significant",
-#         s=80
-#     )
-#     plt.axhline(-np.log10(0.05), color="red", linestyle="--", label="FDR = 0.05")
-#     plt.axvline(0, color="gray", linestyle="--")
+    plt.figure(figsize=(10, 7))
+    ax = sns.scatterplot(
+        data=results_df,
+        x="log2_fc",
+        y="-log10_p",
+        hue="significant",
+        s=80
+    )
+    plt.axhline(-np.log10(0.05), color="red", linestyle="--", label="FDR = 0.05")
+    plt.axvline(0, color="gray", linestyle="--")
 
-#     # Add cell type labels to each point
-#     for i, row in results_df.iterrows():
-#         ax.text(
-#             row["log2_fc"], row["-log10_p"], row["cell_type"],
-#             fontsize=8, ha="right", va="bottom"
-#         )
+    # Add cell type labels to each point
+    for i, row in results_df.iterrows():
+        ax.text(
+            row["log2_fc"], row["-log10_p"], row["cell_type"],
+            fontsize=8, ha="right", va="bottom"
+        )
 
-#     plt.xlabel("Log2 Fold Change (edges / centers)")
-#     plt.ylabel("-Log10 Adjusted p-value")
-#     plt.title("Differential Abundance by Cell Type")
-#     plt.legend()
-#     plt.tight_layout()
-#     plt.savefig("/Users/rohit/Downloads/figures/volcano_celltype_diff.png", dpi=300)
-#     plt.close()
+    plt.xlabel("Log2 Fold Change (node positive / node negative)")
+    plt.ylabel("-Log10 Adjusted p-value")
+    plt.title("Differential Abundance by Cell Type")
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig("/Users/rohit/Downloads/figures_v2/volcano_celltype_diff.png", dpi=300)
+    plt.close()
 
-# def plot_pcoa_biplot(centers, edges, num_top_features=10):
-#     centers = centers.set_index("FINAL_CELL_TYPE").T.rename_axis("SAMPLE")
-#     edges = edges.set_index("FINAL_CELL_TYPE").T.rename_axis("SAMPLE")
+def plot_pcoa_biplot(centers, edges, num_top_features=10):
+    centers = centers.set_index("FINAL_CELL_TYPE").T.rename_axis("SAMPLE")
+    edges = edges.set_index("FINAL_CELL_TYPE").T.rename_axis("SAMPLE")
 
-#     combined = pd.concat([centers, edges])
-#     condition = ["centers"] * len(centers) + ["edges"] * len(edges)
+    combined = pd.concat([centers, edges])
+    condition = ["centers"] * len(centers) + ["edges"] * len(edges)
 
-#     # Compute Bray-Curtis distance matrix
-#     distances = np.array([braycurtis(u, v) for u in combined.values for v in combined.values])
-#     distances = distances.reshape(len(combined), len(combined))
-#     distance_matrix = DistanceMatrix(distances, ids=combined.index)
+    # Compute Bray-Curtis distance matrix
+    distances = np.array([braycurtis(u, v) for u in combined.values for v in combined.values])
+    distances = distances.reshape(len(combined), len(combined))
+    distance_matrix = DistanceMatrix(distances, ids=combined.index)
 
-#     # PCoA
-#     pcoa_results = pcoa(distance_matrix)
-#     coords = pcoa_results.samples.iloc[:, :2].copy()
-#     coords["condition"] = condition
+    # PCoA
+    pcoa_results = pcoa(distance_matrix)
+    coords = pcoa_results.samples.iloc[:, :2].copy()
+    coords["condition"] = condition
 
-#     # Feature (cell type) loadings: correlate with PCoA axes
-#     feature_corr = {}
-#     for feature in combined.columns:
-#         rho1, _ = spearmanr(combined[feature], coords.iloc[:, 0])
-#         rho2, _ = spearmanr(combined[feature], coords.iloc[:, 1])
-#         feature_corr[feature] = (rho1, rho2)
+    # Feature (cell type) loadings: correlate with PCoA axes
+    feature_corr = {}
+    for feature in combined.columns:
+        rho1, _ = spearmanr(combined[feature], coords.iloc[:, 0])
+        rho2, _ = spearmanr(combined[feature], coords.iloc[:, 1])
+        feature_corr[feature] = (rho1, rho2)
 
-#     feature_df = pd.DataFrame(feature_corr, index=["PCoA1_corr", "PCoA2_corr"]).T
-#     feature_df["magnitude"] = np.sqrt(feature_df["PCoA1_corr"]**2 + feature_df["PCoA2_corr"]**2)
-#     feature_df["abs_corr"] = feature_df[["PCoA1_corr", "PCoA2_corr"]].abs().max(axis=1)
-#     # top_features = feature_df.nlargest(num_top_features, "magnitude")
-#     top_features = feature_df[feature_df["abs_corr"] > 0.3]
-#     # top_features = feature_df
+    feature_df = pd.DataFrame(feature_corr, index=["PCoA1_corr", "PCoA2_corr"]).T
+    feature_df["magnitude"] = np.sqrt(feature_df["PCoA1_corr"]**2 + feature_df["PCoA2_corr"]**2)
+    feature_df["abs_corr"] = feature_df[["PCoA1_corr", "PCoA2_corr"]].abs().max(axis=1)
+    # top_features = feature_df.nlargest(num_top_features, "magnitude")
+    top_features = feature_df[feature_df["abs_corr"] > 0.3]
+    # top_features = feature_df
 
-#     # Plot
-#     fig, ax = plt.subplots(figsize=(7, 6))
-#     sns.scatterplot(data=coords, x=coords.columns[0], y=coords.columns[1], hue="condition", s=100, ax=ax, edgecolor="black")
+    # Plot
+    fig, ax = plt.subplots(figsize=(7, 6))
+    sns.scatterplot(data=coords, x=coords.columns[0], y=coords.columns[1], hue="condition", s=100, ax=ax, edgecolor="black")
 
-#     for cell_type, row in top_features.iterrows():
-#         ax.arrow(0, 0, row["PCoA1_corr"], row["PCoA2_corr"], color="gray", alpha=0.7, head_width=0.02)
-#         ax.text(row["PCoA1_corr"] * 1.1, row["PCoA2_corr"] * 1.1, cell_type, fontsize=8, ha="center", va="center")
+    for cell_type, row in top_features.iterrows():
+        ax.arrow(0, 0, row["PCoA1_corr"], row["PCoA2_corr"], color="gray", alpha=0.7, head_width=0.02)
+        ax.text(row["PCoA1_corr"] * 1.1, row["PCoA2_corr"] * 1.1, cell_type, fontsize=8, ha="center", va="center")
 
-#     var_explained = pcoa_results.proportion_explained * 100
-#     ax.set_xlabel(f"PCoA1 ({var_explained[0]:.2f}%)")
-#     ax.set_ylabel(f"PCoA2 ({var_explained[1]:.2f}%)")
-#     ax.set_title("PCoA Biplot (Bray-Curtis)")
-#     ax.axhline(0, color="black", lw=0.5)
-#     ax.axvline(0, color="black", lw=0.5)
-#     ax.legend()
-#     plt.tight_layout()
-#     plt.savefig("/Users/rohit/Downloads/figures/pcoa_biplot.png", dpi=300)
-#     plt.close()
+    var_explained = pcoa_results.proportion_explained * 100
+    ax.set_xlabel(f"PCoA1 ({var_explained[0]:.2f}%)")
+    ax.set_ylabel(f"PCoA2 ({var_explained[1]:.2f}%)")
+    ax.set_title("PCoA Biplot (Bray-Curtis)")
+    ax.axhline(0, color="black", lw=0.5)
+    ax.axvline(0, color="black", lw=0.5)
+    ax.legend()
+    plt.tight_layout()
+    plt.savefig("/Users/rohit/Downloads/figures_v2/pcoa_biplot.png", dpi=300)
+    plt.close()
 
-# results = test_cell_type_differences(centers, edges)
-# plot_volcano(results, centers, edges)
-# plot_pcoa_biplot(centers, edges)
+results = test_cell_type_differences(centers, edges)
+plot_volcano(results, centers, edges)
+plot_pcoa_biplot(centers, edges)
 
-# print(results)
+print(results)
