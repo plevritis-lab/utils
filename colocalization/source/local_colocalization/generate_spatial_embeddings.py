@@ -287,4 +287,5 @@ def main():
     
     driver(data_directory, signature_matrix, save_path, filter, log_transform, bandwidth, cell_type_colors)
 
-main()
+if __name__ == "__main__":
+    main()
