@@ -60,4 +60,5 @@ def main():
 
     generate_quality_control_spreadsheet(clinical_data, panel_path, save_path)
 
-main()
+if __name__ == "__main__":
+    main()

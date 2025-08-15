@@ -73,4 +73,5 @@ def main():
 
     process_thresholds(image_directory, signature_matrix, save_path)
 
-main()
+if __name__ == "__main__":
+    main()

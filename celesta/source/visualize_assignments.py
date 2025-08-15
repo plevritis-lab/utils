@@ -163,4 +163,5 @@ def main():
     visualize_assignments(assignments, cell_type_info, display_cells, os.path.join(save_path, "cell_plots"), sample_name)
     visualize_cell_proportions(assignments, cell_type_info, os.path.join(save_path, "cell_proportions"), sample_name)
 
-main()
+if __name__ == "__main__":
+    main()
