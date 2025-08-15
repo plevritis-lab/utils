@@ -213,4 +213,5 @@ def main():
     os.makedirs(f"../output/{mode}/density_correlation_analysis", exist_ok = True)
     fig.savefig(f"../output/{mode}/density_correlation_analysis/{marker_one}_{marker_two}_tile_size_{tile_size}_boxplot.pdf")
     
-main()
+if __name__ == "__main__":
+    main()
