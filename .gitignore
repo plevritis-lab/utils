@@ -1,5 +1,13 @@
-# general
-.DS_Store
-
-# python
 __pycache__/
+*.py[cod]
+*.so
+.Python
+.venv/
+dist/
+build/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.env
+.env.*
+.DS_Store
