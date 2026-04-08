@@ -1,0 +1,114 @@
+{
+    "unknown": {
+        "color": "#7F7F7F"
+    },
+    
+    "epithelial cell (e-cadherin+)": {
+        "marker": "E_CADHERIN",
+        "color": "#FFFF02"
+    },
+    
+    "endothelial cell (CD31+)": {
+        "marker": "CD31",
+        "color": "#0B00FF"
+    },
+    
+    "fibroblast (PDGFRa+)": {
+        "marker": "PDGFRA",
+        "color": "#FF0000"
+    },
+    
+    "fibroblast (aSMA+)": {
+        "marker": "ASMA",
+        "color": "#03FF00"
+    },
+    
+    "nerve cell (TUBB3+)": {
+        "marker": "TUBB3",
+        "color": "#FFFFFF"
+    },
+    
+    "immune cell (CD45+)": {
+        "marker": "CD45",
+        "color": "#00CC9E"
+    },
+    
+    "islet-a cell (GCG+)": {
+        "marker": "GCG",
+        "color": "#00FFFF"
+    },
+    
+    "epithelial cell (AMY2A+)": {
+        "marker": "AMY2A",
+        "color": "#FF6F61"
+    },
+    
+    "epithelial cell (cytokeratin-19+)": {
+        "marker": "CYTOKERATIN_19",
+        "color": "#FF8800"
+    },
+
+    "epithelial cell (AMY2A+ cytokeratin-19+)": {
+        "color": "#D4A72A"
+    },
+    
+    "epithelial cell (p-ERK+)": {
+        "marker": "PERK",
+        "color": "#8E44AD"
+    },
+    
+    "islet-b cell (proinsulin+)": {
+        "marker": "PROINSULIN",
+        "color": "#B4A7D6"
+    },
+    
+    "B cell (CD19+)": {
+        "marker": "CD19",
+        "color": "#D5A6BD"
+    },
+    
+    "T cell (CD3+)": {
+        "marker": "CD3",
+        "color": "#F0E68C"
+    },
+    
+    "macrophage (F4/80+)": {
+        "marker": "F4_80",
+        "color": "#C27BA0"
+    },
+    
+    "dendritic cell (CD11c+)": {
+        "marker": "CD11C",
+        "color": "#76A5AF"
+    },
+    
+    "erythroid precursor cell (CD71+)": {
+        "marker": "CD71",
+        "color": "#6FA8DC"
+    },
+    
+    "erythroid mature cell (TER-119+)": {
+        "marker": "TER_119",
+        "color": "#8E7CC3"
+    },
+    
+    "helper T cell (CD4+)": {
+        "marker": "CD4",
+        "color": "#C5A6D9"
+    },
+    
+    "regulatory T cell (CD4+ FOXP3+)": {
+        "marker": "FOXP3",
+        "color": "#A64D79"
+    },
+    
+    "cytotoxic T cell (CD8a+)": {
+        "marker": "CD8A",
+        "color": "#674EA7"
+    },
+    
+    "memory T cell (CD49f+)": {
+        "marker": "CD49F",
+        "color": "#351C75"
+    }
+}
