@@ -1,0 +1,5 @@
+image_directory: <TODO>
+nuclear_channel: <TODO>
+segment_channel: <TODO>           # comma-separated for pseudochannel
+segmentation_method: cellpose     # cellpose or mesmer
+# panel_path: <TODO>              # uncomment if metadata extraction fails
