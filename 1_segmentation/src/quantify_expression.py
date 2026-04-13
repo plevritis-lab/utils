@@ -1,22 +1,18 @@
-import argparse
+from pathlib import Path
+
 import numpy as np
-import os
 import pandas as pd
 from skimage.measure import regionprops
 from tifffile import imread
-from .utils import extract_proteomic_panel
-import xml.etree.ElementTree as ET
 
 
-def quantify_expression(image, segmentation_mask, panel, save_path):
-    """quantifies expression of every marker present in the panel in the provided image per cell
-
-    args:
-        image (array): loaded matrix representation of the image of shape (c, y, x)
-        segmentation_mask (array): loaded matrix representation of the segmentation mask of shape (y, x)
-        panel (list): list of protein channel names
-        save_path (str): file where output (cell measurements) will be written
-    """
+def quantify_expression(
+    image: np.ndarray,
+    segmentation_mask: np.ndarray,
+    panel: list[str],
+    save_path: str,
+) -> None:
+    """quantifies expression of every marker in the panel per cell"""
 
     cell_data = {}
 
@@ -25,127 +21,58 @@ def quantify_expression(image, segmentation_mask, panel, save_path):
 
         properties = regionprops(segmentation_mask, channel_image)
 
-        for property in properties:
-            cell_identifier = property.label
-
-            cell_major_axis_length = property.axis_major_length
-            cell_minor_axis_length = property.axis_minor_length
-
-            cell_centroid_y, cell_centroid_x = property.centroid
-            cell_eccentricity = property.eccentricity
-            cell_intensity = property.intensity_mean
-            cell_size = property.num_pixels
-            cell_orientation = property.orientation
+        for cell_property in properties:
+            cell_identifier = cell_property.label
 
             if cell_identifier not in cell_data:
                 cell_data[cell_identifier] = {"CELL_IDENTIFIER": cell_identifier}
 
-            cell_data[cell_identifier]["MAJOR_AXIS_LENGTH"] = cell_major_axis_length
-            cell_data[cell_identifier]["MINOR_AXIS_LENGTH"] = cell_minor_axis_length
+            cell_data[cell_identifier]["MAJOR_AXIS_LENGTH"] = (
+                cell_property.axis_major_length
+            )
+            cell_data[cell_identifier]["MINOR_AXIS_LENGTH"] = (
+                cell_property.axis_minor_length
+            )
 
+            cell_centroid_y, cell_centroid_x = cell_property.centroid
             cell_data[cell_identifier]["X"] = round(cell_centroid_x)
             cell_data[cell_identifier]["Y"] = round(cell_centroid_y)
-            cell_data[cell_identifier]["SIZE"] = round(cell_size)
-            cell_data[cell_identifier]["ECCENTRICITY"] = cell_eccentricity
-            cell_data[cell_identifier]["ORIENTATION"] = cell_orientation
+            cell_data[cell_identifier]["SIZE"] = round(cell_property.num_pixels)
+            cell_data[cell_identifier]["ECCENTRICITY"] = cell_property.eccentricity
+            cell_data[cell_identifier]["ORIENTATION"] = cell_property.orientation
 
-            cell_data[cell_identifier][panel[channel_number].upper()] = cell_intensity
+            cell_data[cell_identifier][panel[channel_number].upper()] = (
+                cell_property.intensity_mean
+            )
 
     cell_expressions = pd.DataFrame.from_dict(cell_data, orient="index")
     cell_expressions.to_csv(f"{save_path}_cell_measurements.csv", index=False)
 
 
-def parse_arguments():
-    """parses several command line arguments provided by the user (use --help to see the full list)"""
+def quantify_sample(
+    image_path: Path,
+    mask_path: Path,
+    panel: list[str],
+    segmentation_method: str,
+    save_directory: Path,
+) -> Path:
+    """loads image and mask, quantifies expression, and returns path to output CSV"""
 
-    parser = argparse.ArgumentParser(
-        description="interface for quantifying marker expression from generated segmentation masks"
-    )
+    image = imread(str(image_path))
 
-    parser.add_argument(
-        "-i",
-        "--image_path",
-        help="file path that points to the underlying location of the QPTIFF or TIF",
-    )
-    parser.add_argument(
-        "-m",
-        "--mask_path",
-        help="file path that points to the underlying location of the segmentation mask, stored as a .npy file",
-    )
-    parser.add_argument(
-        "-p",
-        "--panel_path",
-        help="file path that points to the underlying location of the channel_names.txt file; \
-                                                      this argument is optional and should only be used when metadata parsing fails",
-    )
-    parser.add_argument(
-        "-s",
-        "--save_path",
-        help="directory path that points to the underlying location where output will be written",
-    )
+    if segmentation_method == "cellpose":
+        segmentation_mask = np.load(str(mask_path), allow_pickle=True).item()[
+            "outlines"
+        ]
+    else:
+        segmentation_mask = np.load(str(mask_path), allow_pickle=True)
 
-    parser.add_argument(
-        "--apply_mesmer",
-        action="store_true",
-        help="toggle only if using a mesmer-generated segmentation mask",
-    )
-    parser.add_argument(
-        "--apply_cellpose",
-        action="store_true",
-        help="toggle only if using a cellpose-generated segmentation mask",
-    )
+    output_directory = save_directory / "quantifications" / segmentation_method
+    output_directory.mkdir(parents=True, exist_ok=True)
 
-    return parser.parse_args()
+    sample_name = image_path.stem
+    save_path = str(output_directory / sample_name)
 
+    quantify_expression(image, segmentation_mask, panel, save_path)
 
-def main():
-    arguments = parse_arguments()
-
-    image_path = arguments.image_path
-    mask_path = arguments.mask_path
-    panel_path = arguments.panel_path
-    save_path = arguments.save_path
-
-    print("\nprocessing sample", os.path.basename(os.path.splitext(image_path)[0]))
-
-    try:
-        panel = extract_proteomic_panel(image_path)
-
-    except (AttributeError, KeyError, ET.ParseError):
-        print(
-            "\nERROR: unable to extract marker metadata from the provided file; "
-            "please provide a channel_names.txt file instead"
-        )
-
-        if panel_path:
-            print(f"INFO: extracting protein panel from {panel_path}")
-            panel = extract_proteomic_panel(image_path, panel_path)
-
-        else:
-            return
-
-    image = imread(image_path)  # (c, y, x)
-
-    if arguments.apply_mesmer:
-        save_path = os.path.join(save_path, "quantifications", "mesmer")
-        os.makedirs(save_path, exist_ok=True)
-        save_path = os.path.join(
-            save_path, os.path.basename(os.path.splitext(image_path)[0])
-        )
-
-        mesmer_segmentation = np.load(mask_path, allow_pickle=True)
-        quantify_expression(image, mesmer_segmentation, panel, save_path)
-
-    if arguments.apply_cellpose:
-        save_path = os.path.join(save_path, "quantifications", "cellpose")
-        os.makedirs(save_path, exist_ok=True)
-        save_path = os.path.join(
-            save_path, os.path.basename(os.path.splitext(image_path)[0])
-        )
-
-        cellpose_segmentation = np.load(mask_path, allow_pickle=True).item()["outlines"]
-        quantify_expression(image, cellpose_segmentation, panel, save_path)
-
-
-if __name__ == "__main__":
-    main()
+    return Path(f"{save_path}_cell_measurements.csv")

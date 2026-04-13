@@ -1,0 +1,5 @@
+image_directory: /Users/rohit/Downloads/data
+panel_path: /Users/rohit/Downloads/data/channel_names.txt
+nuclear_channel: DRAQ5
+segment_channel: CYTOKERATIN, CD45
+segmentation_method: cellpose

@@ -52,11 +52,18 @@ Modules can run independently if expected inputs exist.
 
 ## Running Scripts
 
-Python scripts:
+Segmentation pipeline (config-driven, runs reformat + segment + quantify):
 
 ```bash
-uv run python3 1_segmentation/src/apply_segmentation.py --help
-uv run python3 1_segmentation/src/quantify_expression.py --help
+uv run python3 1_segmentation/src/run_pipeline.py --config path/to/config.yaml
+uv run python3 1_segmentation/src/run_pipeline.py --config path/to/config.yaml --force
+```
+
+See `1_segmentation/conf/config_template.yaml` for the config format.
+
+Other Python scripts:
+
+```bash
 uv run python3 2_celesta/src/generate_thresholds.py --help
 uv run python3 3_colocalization/src/local_colocalization/generate_spatial_embeddings.py --help
 uv run python3 4_topology/src/apply_persistent_homology.py --help
@@ -68,13 +75,6 @@ R scripts:
 Rscript 2_celesta/src/apply_celesta.R --help
 Rscript 3_colocalization/src/global_colocalization/generate_condition_summaries.R --help
 ```
-
-## Batch Processing
-
-Use module templates in `*/bash/*_template.sh`:
-1. copy template
-2. fill all `<TODO>` values
-3. run per condition/project
 
 ### Module Layout
 
