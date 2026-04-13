@@ -1,0 +1,17 @@
+<urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
+<url><loc>/404.html</loc></url>
+<url><loc>/authors.html</loc></url>
+<url><loc>/index.html</loc></url>
+<url><loc>/reference/MetaDisco-class.html</loc></url>
+<url><loc>/reference/Spomic-class.html</loc></url>
+<url><loc>/reference/createMetaDisco.html</loc></url>
+<url><loc>/reference/createSpomic.html</loc></url>
+<url><loc>/reference/filterTiles.html</loc></url>
+<url><loc>/reference/getNeighbors.html</loc></url>
+<url><loc>/reference/index.html</loc></url>
+<url><loc>/reference/saveSpomic.html</loc></url>
+<url><loc>/reference/searchCellNeighbors.html</loc></url>
+<url><loc>/reference/setSpomicHypers.html</loc></url>
+<url><loc>/reference/tileImage.html</loc></url>
+<url><loc>/reference/windowBootstrap.html</loc></url>
+</urlset>

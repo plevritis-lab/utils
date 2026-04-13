@@ -5,27 +5,28 @@ description = "utility scripts for processing CODEX spatial proteomics data"
 readme = "README.md"
 requires-python = ">=3.9,<3.11"
 dependencies = [
-    "cellpose>=4.1.1",
-    "magicgui>=0.10.1",
-    "matplotlib>=3.9.4",
-    "napari>=0.5.6",
-    "numpy>=2.0.2",
-    "opencv-python>=4.13.0.92",
-    "pandas>=2.3.3",
-    "pyarrow>=21.0.0",
-    "pyqt5>=5.15.11",
-    "scikit-bio>=0.7.0",
-    "scikit-image>=0.24.0",
-    "scikit-learn>=1.6.1",
-    "scipy>=1.13.1",
-    "seaborn>=0.13.2",
-    "statsmodels>=0.14.6",
-    "tifffile>=2024.8.30",
-    "umap-learn>=0.5.11",
+    "cellpose",
+    "magicgui",
+    "matplotlib",
+    "napari",
+    "numpy>=1.26.4,<2",
+    "opencv-python",
+    "pandas",
+    "pyarrow",
+    "pyqt5",
+    "scikit-bio",
+    "scikit-image",
+    "scikit-learn",
+    "scipy",
+    "seaborn",
+    "statsmodels",
+    "tifffile",
+    "umap-learn",
 ]
 
 [project.optional-dependencies]
 hpc = [
+    "deepcell>=0.12.9",
     "gudhi>=3.10.1",
 ]
 
