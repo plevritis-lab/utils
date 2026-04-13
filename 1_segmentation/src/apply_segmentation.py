@@ -123,18 +123,18 @@ def apply_cellpose(
     segment_channel_name: str,
     save_path: str,
 ) -> None:
-    """applies cellpose cyto3 model to segment compressed RGB images"""
+    """applies cellpose-SAM model to segment compressed RGB images"""
 
     from cellpose import io, models, utils
 
-    model = models.Cellpose(model_type="cyto3")
+    model = models.CellposeModel(pretrained_model="cpsam")
 
     save_path = os.path.join(save_path, "cellpose")
     save_path = os.path.join(save_path, segment_channel_name)
     os.makedirs(save_path, exist_ok=True)
 
     for i, compressed_image in enumerate(compressed_images):
-        masks, flows, _, diams = model.eval(compressed_image, [2, 3], diameter=None)
+        masks, flows, _ = model.eval(compressed_image, channels=[2, 3])
         compressed_image[0, :, :] = (
             utils.masks_to_outlines(masks) * np.iinfo(compressed_image.dtype).max
         )
@@ -148,8 +148,7 @@ def apply_cellpose(
             masks,
             flows,
             os.path.join(save_path, f"image_{i + 1}"),
-            diams,
-            [2, 3],
+            channels=[2, 3],
         )
 
 
