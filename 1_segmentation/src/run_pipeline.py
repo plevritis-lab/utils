@@ -35,7 +35,7 @@ def run_pipeline(
     with panel_path.open() as f:
         panel = [marker.rstrip() for marker in f]
 
-    log_path = image_directory / "pipeline.log"
+    log_path = image_directory / "segmentation_pipeline.log"
     root_logger = logging.getLogger()
     root_logger.setLevel(logging.INFO)
     root_logger.handlers.clear()
@@ -46,7 +46,10 @@ def run_pipeline(
             logging.Formatter("%(asctime)s %(levelname)s — %(message)s")
         )
 
-    logger.info("pipeline started at %s", datetime.now().isoformat())
+    logger.info("")
+    logger.info("=" * 80)
+    logger.info("SEGMENTATION PIPELINE RUN — %s", datetime.now().isoformat())
+    logger.info("=" * 80)
     logger.info("config: %s", config)
 
     prepare_input(image_directory)

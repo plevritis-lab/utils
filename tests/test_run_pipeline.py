@@ -3,8 +3,6 @@ import yaml
 from pathlib import Path
 from tifffile import imwrite
 
-from run_pipeline import run_pipeline
-
 
 def _create_sample_directory(base: Path, name: str, extension: str = ".tif") -> Path:
     data_dir = base / name / "data"
@@ -59,7 +57,7 @@ def test_load_config_and_discover_samples(tmp_path):
     assert len(sample_dirs) == 2
 
 
-def test_skip_when_outputs_exist(tmp_path):
+def test_skip_when_outputs_exist(tmp_path, segmentation_pipeline):
     _create_sample_directory(tmp_path, "sample_001")
 
     mask_dir = tmp_path / "sample_001" / "full" / "cellpose" / "E_CADHERIN"
@@ -72,8 +70,8 @@ def test_skip_when_outputs_exist(tmp_path):
 
     config_path = _write_config(tmp_path)
 
-    run_pipeline(config_path, force=False)
+    segmentation_pipeline.run_pipeline(config_path, force=False)
 
-    assert (tmp_path / "pipeline.log").is_file()
-    log_content = (tmp_path / "pipeline.log").read_text()
+    assert (tmp_path / "segmentation_pipeline.log").is_file()
+    log_content = (tmp_path / "segmentation_pipeline.log").read_text()
     assert "[skip] sample_001" in log_content

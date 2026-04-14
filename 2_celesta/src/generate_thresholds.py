@@ -1,101 +1,70 @@
-import argparse
-import os
+from pathlib import Path
+
 import pandas as pd
 
+EXCLUDED_DIRECTORIES = {
+    "assignments",
+    "quantifications",
+    "thresholds",
+}
 
-def process_thresholds(image_directory, signature_matrix_path, save_path):
-    """generates or updates thresholds spreadsheets for spatial proteomics data
 
-    args:
-        image_directory (str): path to a directory that contains image subdirectories
-        signature_matrix_path (str): path to a CSV file containing a signature matrix
-        save_path (str): path where the thresholds spreadsheets will be saved
-    """
+def process_thresholds(
+    image_directory: Path,
+    signature_matrix_path: Path,
+    save_path: Path,
+    sample_filter: list[str] | None = None,
+) -> None:
+    """generates or updates per-sample threshold CSVs from a signature matrix"""
 
     signature_matrix = pd.read_csv(signature_matrix_path)
+    save_path.mkdir(parents=True, exist_ok=True)
 
-    expected_threshold_files = [
-        f"{d}_thresholds.csv"
-        for d in os.listdir(image_directory)
-        if os.path.isdir(os.path.join(image_directory, d))
-        and d not in ["quantifications", "histology", "assignments"]
-    ]
-    existing_threshold_files = [
-        f for f in os.listdir(save_path) if f.endswith("_thresholds.csv")
+    sample_directories = [
+        d.name
+        for d in sorted(image_directory.iterdir())
+        if d.is_dir() and d.name not in EXCLUDED_DIRECTORIES
     ]
 
-    for file in existing_threshold_files:
-        thresholds = pd.read_csv(os.path.join(save_path, file))
+    if sample_filter is not None:
+        sample_directories = [s for s in sample_directories if s in sample_filter]
 
-        rows = []
-        for cell_type in signature_matrix["CELL_TYPE"]:
-            if cell_type in thresholds["CELL_TYPE"].values:
-                row = thresholds[thresholds["CELL_TYPE"] == cell_type].iloc[0]
-                rows.append(
-                    {
-                        "CELL_TYPE": cell_type,
-                        "ANCHOR": row["ANCHOR"],
-                        "ITERATION": row["ITERATION"],
-                    }
-                )
+    existing_threshold_files = {
+        f.stem.replace("_thresholds", ""): f
+        for f in save_path.iterdir()
+        if f.name.endswith("_thresholds.csv")
+    }
 
-            else:
-                rows.append({"CELL_TYPE": cell_type, "ANCHOR": 0.7, "ITERATION": 0.5})
+    for sample_name in sample_directories:
+        threshold_path = save_path / f"{sample_name}_thresholds.csv"
 
-        updated_thresholds = pd.DataFrame(rows)
-        updated_thresholds.to_csv(os.path.join(save_path, file), index=False)
+        if sample_name in existing_threshold_files:
+            thresholds = pd.read_csv(existing_threshold_files[sample_name])
 
-        expected_threshold_files.remove(file)
+            rows = []
+            for cell_type in signature_matrix["CELL_TYPE"]:
+                if cell_type in thresholds["CELL_TYPE"].values:
+                    row = thresholds[thresholds["CELL_TYPE"] == cell_type].iloc[0]
+                    rows.append(
+                        {
+                            "CELL_TYPE": cell_type,
+                            "ANCHOR": row["ANCHOR"],
+                            "ITERATION": row["ITERATION"],
+                        }
+                    )
+                else:
+                    rows.append(
+                        {"CELL_TYPE": cell_type, "ANCHOR": 0.7, "ITERATION": 0.5}
+                    )
 
-    for file in expected_threshold_files:
-        thresholds = pd.DataFrame(
-            {
-                "CELL_TYPE": signature_matrix["CELL_TYPE"],
-                "ANCHOR": [0.7] * len(signature_matrix),
-                "ITERATION": [0.5] * len(signature_matrix),
-            }
-        )
-
-        thresholds.to_csv(os.path.join(save_path, file), index=False)
-
-
-def parse_arguments():
-    """parses several command line arguments provided by the user (use --help to see the full list)"""
-
-    parser = argparse.ArgumentParser(
-        description="interface for generating thresholds spreadsheets"
-    )
-
-    parser.add_argument(
-        "-i",
-        "--image_directory",
-        help="path to a directory that contains image subdirectories",
-    )
-    parser.add_argument(
-        "-m",
-        "--signature_matrix",
-        help="path that points to the underlying location of the signature matrix",
-    )
-    parser.add_argument(
-        "-s",
-        "--save_path",
-        help="path where the generated thresholds spreadsheets will be saved",
-    )
-
-    return parser.parse_args()
-
-
-def main():
-    arguments = parse_arguments()
-
-    image_directory = arguments.image_directory
-    signature_matrix = arguments.signature_matrix
-    save_path = arguments.save_path
-
-    os.makedirs(save_path, exist_ok=True)
-
-    process_thresholds(image_directory, signature_matrix, save_path)
-
-
-if __name__ == "__main__":
-    main()
+            updated_thresholds = pd.DataFrame(rows)
+            updated_thresholds.to_csv(threshold_path, index=False)
+        else:
+            thresholds = pd.DataFrame(
+                {
+                    "CELL_TYPE": signature_matrix["CELL_TYPE"],
+                    "ANCHOR": [0.7] * len(signature_matrix),
+                    "ITERATION": [0.5] * len(signature_matrix),
+                }
+            )
+            thresholds.to_csv(threshold_path, index=False)
