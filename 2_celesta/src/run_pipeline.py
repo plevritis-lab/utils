@@ -12,6 +12,7 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+from generate_threshold_report import generate_threshold_report
 from generate_thresholds import process_thresholds
 from visualize_assignments import visualize_assignments, visualize_cell_proportions
 
@@ -56,8 +57,12 @@ def run_pipeline(
 
     image_directory = Path(config["image_directory"])
     signature_matrix = Path(config["signature_matrix"])
+    panel_path = Path(config["panel_path"])
     segmentation_method = config["segmentation_method"]
     colormap_path = Path(config["colormap"]) if "colormap" in config else None
+
+    with panel_path.open() as f:
+        panel = [marker.rstrip() for marker in f]
 
     log_path = image_directory / "celesta_pipeline.log"
     root_logger = logging.getLogger()
@@ -171,7 +176,44 @@ def run_pipeline(
             sample_name,
         )
 
-    logger.info("pipeline complete — visualized %d samples", len(assignment_files))
+    IMAGE_EXTENSIONS = {".qptiff", ".tif", ".tiff"}
+    signature_matrix_df = pd.read_csv(signature_matrix)
+
+    for assignment_file in assignment_files:
+        sample_name = assignment_file.stem.replace("_assignments", "")
+        sample_data_directory = image_directory / sample_name / "data"
+
+        if not sample_data_directory.is_dir():
+            logger.warning("[report] no data directory for %s, skipping", sample_name)
+            continue
+
+        image_files = [
+            f for f in sample_data_directory.iterdir() if f.suffix in IMAGE_EXTENSIONS
+        ]
+
+        if not image_files:
+            logger.warning("[report] no image found for %s, skipping", sample_name)
+            continue
+
+        threshold_path = thresholds_directory / f"{sample_name}_thresholds.csv"
+        if not threshold_path.is_file():
+            logger.warning("[report] no thresholds for %s, skipping", sample_name)
+            continue
+
+        logger.info("[report] %s", sample_name)
+        report_path = generate_threshold_report(
+            assignments_path=assignment_file,
+            image_path=image_files[0],
+            panel=panel,
+            signature_matrix=signature_matrix_df,
+            thresholds=pd.read_csv(threshold_path),
+            colormap=cell_type_info,
+            sample_name=sample_name,
+            save_path=assignments_directory,
+        )
+        logger.info("[report] saved to %s", report_path)
+
+    logger.info("pipeline complete — processed %d samples", len(assignment_files))
 
 
 def main() -> None:

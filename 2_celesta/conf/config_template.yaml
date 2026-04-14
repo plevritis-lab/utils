@@ -1,5 +1,6 @@
 image_directory: /Users/rohit/Downloads/data
 signature_matrix: /Users/rohit/Downloads/data/signature_matrix.csv
+panel_path: /Users/rohit/Downloads/data/channel_names.txt
 segment_channel: CYTOKERATIN, CD45
 segmentation_method: cellpose
 
