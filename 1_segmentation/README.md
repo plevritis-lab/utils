@@ -2,13 +2,14 @@
 
 This module detects cells from multiplexed CODEX images and quantifies per-cell marker expression.
 
-- **Step 1:** segmentation mask generation (cellpose or mesmer)
-- **Step 2:** per-cell measurement extraction into CSV files
+- **Step 1:** input reformatting (organizes flat images into expected directory layout)
+- **Step 2:** segmentation mask generation (cellpose)
+- **Step 3:** per-cell measurement extraction into CSV files
 
 ## Prerequisites
 
 - Standard install: `uv sync`
-- HPC/Linux extras (required for mesmer): `uv sync --extra hpc`
+- HPC/Linux extras: `uv sync --extra hpc`
 - Segmentation is compute-heavy; use HPC for full-resolution runs.
 
 ## Required Inputs
@@ -18,80 +19,78 @@ This module detects cells from multiplexed CODEX images and quantifies per-cell 
 | Proteomic image | `.qptiff`, `.tif`, `.tiff` | One multi-channel image per sample |
 | `channel_names.txt` | text | One marker per line; required for plain TIF or missing QPTIFF metadata |
 
-Expected sample layout:
+Place all sample images as a flat list inside the image directory:
 
 ```
 /path/to/images/
-└── sample_001/
-    └── data/
-        └── sample_001.qptiff
+├── sample_001.qptiff
+├── sample_002.qptiff
+└── channel_names.txt
 ```
 
-If your images are flat, reorganize first:
+The pipeline's reformat step automatically reorganizes them into the expected layout:
+
+```
+/path/to/images/
+├── sample_001/
+│   └── data/
+│       └── sample_001.qptiff
+├── sample_002/
+│   └── data/
+│       └── sample_002.qptiff
+└── channel_names.txt
+```
+
+## Config File
+
+Create a YAML config from the template at `1_segmentation/conf/config_template.yaml`:
+
+```yaml
+image_directory: /path/to/images
+panel_path: /path/to/images/channel_names.txt
+nuclear_channel: DAPI
+segment_channel: PanCK, CD45
+segmentation_method: cellpose
+```
+
+## Run the Pipeline
+
+The unified pipeline runs all three steps (reformat, segment, quantify) in sequence:
 
 ```bash
-uv run python 1_segmentation/src/reformat_input.py --data_directory /path/to/images
+uv run python3 1_segmentation/src/run_pipeline.py --config path/to/config.yaml
 ```
 
-## Run Segmentation
+To re-run all samples (ignoring previously completed outputs):
 
 ```bash
-uv run python 1_segmentation/src/apply_segmentation.py \
-    --image_path /path/to/sample_001/data/sample_001.qptiff \
-    --panel_path /path/to/channel_names.txt \
-    --nuclear_channel DAPI \
-    --segment_channel PanCK,CD45 \
-    --apply_cellpose
+uv run python3 1_segmentation/src/run_pipeline.py --config path/to/config.yaml --force
 ```
 
-Use one of:
-- `--apply_cellpose`
-- `--apply_mesmer` (requires `DEEPCELL_ACCESS_TOKEN`)
+The pipeline logs progress to `segmentation_pipeline.log` inside the image directory and skips samples that already have a mask and quantification CSV.
 
-Useful options:
-- `--overlay_masks` to compare cellpose vs mesmer
-- `--debug` to run on random high-coverage patches
+## Key Outputs
 
-Key output files:
-- mask: `{sample}/full/{method}/{channel}/image_1_seg.npy`
-- quick image: `{sample}/full/{method}/{channel}/image_1.tif`
+- Masks: `{sample}/full/{method}/{channel}/image_1_seg.npy`
+- Quantifications: `quantifications/{method}/{sample}_cell_measurements.csv`
 
-## Run Quantification
-
-```bash
-uv run python 1_segmentation/src/quantify_expression.py \
-    --image_path /path/to/sample_001/data/sample_001.qptiff \
-    --mask_path /path/to/sample_001/full/cellpose/PanCK/image_1_seg.npy \
-    --panel_path /path/to/channel_names.txt \
-    --save_path /path/to/images \
-    --apply_cellpose
-```
-
-Output:
-
-```
-/path/to/images/quantifications/{method}/{sample}_cell_measurements.csv
-```
-
-Critical columns in output CSV:
+Critical columns in the output CSV:
 - `CELL_IDENTIFIER`, `X`, `Y`
-- morphology features (`SIZE`, axis lengths, etc.)
-- one intensity column per marker (uppercase marker names)
+- Morphology features (`SIZE`, axis lengths, etc.)
+- One intensity column per marker (uppercase marker names)
 
-## Batch Processing
+## Running Individual Steps
 
-Use templates in `1_segmentation/bash/`:
-- `segmentation_template.sh`
-- `quantify_expressions_template.sh`
+The pipeline wraps these scripts, which can also be run standalone:
 
-Workflow:
-1. Copy template.
-2. Replace each `<TODO>`.
-3. Run script.
+```bash
+uv run python3 1_segmentation/src/reformat_input.py --data_directory /path/to/images
+uv run python3 1_segmentation/src/apply_segmentation.py --help
+uv run python3 1_segmentation/src/quantify_expression.py --help
+```
 
 ## Help
 
 ```bash
-uv run python 1_segmentation/src/apply_segmentation.py --help
-uv run python 1_segmentation/src/quantify_expression.py --help
+uv run python3 1_segmentation/src/run_pipeline.py --help
 ```
