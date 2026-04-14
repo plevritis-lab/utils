@@ -1,25 +1,18 @@
-import argparse
-import json
-import os
-import pandas as pd
 import matplotlib.pyplot as plt
+import pandas as pd
 
 BASE_SIZE = 20
 POINT_SIZE = 8
 
 
 def visualize_assignments(
-    assignments, cell_type_info, display_cells, save_path, sample_name
-):
-    """visualizes cell type assignments statically
-
-    args:
-        assignments (dataframe): dataframe containing cell positions ["X", "Y"] and cell type assignments ["FINAL_CELL_TYPE"]
-        cell_type_info (dictionary): dictionary mapping cell types to their display properties, including colors
-        display_cells (dictionary): list of cell type names to display color in the visualization
-        save_path (str): directory path where the visualization images will be saved
-        sample_name (str): name of the sample being visualized to be used for file naming
-    """
+    assignments: pd.DataFrame,
+    cell_type_info: dict,
+    display_cells: list[str],
+    save_path: str,
+    sample_name: str,
+) -> None:
+    """visualizes cell type assignments as a spatial scatter plot"""
 
     x_range = assignments["X"].max() - assignments["X"].min()
     y_range = assignments["Y"].max() - assignments["Y"].min()
@@ -69,19 +62,20 @@ def visualize_assignments(
     legend_fig.tight_layout()
     fig.tight_layout()
 
-    legend_fig.savefig(os.path.join(save_path, "assignments_legend.png"), dpi=300)
-    fig.savefig(os.path.join(save_path, f"{sample_name}_assignments.png"), dpi=300)
+    legend_fig.savefig(f"{save_path}/assignments_legend.png", dpi=300)
+    fig.savefig(f"{save_path}/{sample_name}_assignments.png", dpi=300)
+
+    plt.close(fig)
+    plt.close(legend_fig)
 
 
-def visualize_cell_proportions(assignments, cell_type_info, save_path, sample_name):
-    """visualizes cell proportions as a stacked bar chart
-
-    args:
-        assignments (dataframe): dataframe containing cell type assignments ["FINAL_CELL_TYPE"]
-        cell_type_info (dictionary): dictionary mapping cell types to their display properties, including colors
-        save_path (str): directory path where the visualization images will be saved
-        sample_name (str): name of the sample being visualized to be used for file naming
-    """
+def visualize_cell_proportions(
+    assignments: pd.DataFrame,
+    cell_type_info: dict,
+    save_path: str,
+    sample_name: str,
+) -> None:
+    """visualizes cell proportions as a stacked bar chart"""
 
     fig, ax = plt.subplots(figsize=(4, 8))
 
@@ -134,82 +128,8 @@ def visualize_cell_proportions(assignments, cell_type_info, save_path, sample_na
     legend_fig.tight_layout()
     fig.tight_layout()
 
-    legend_fig.savefig(os.path.join(save_path, "proportions_legend.png"), dpi=300)
-    fig.savefig(os.path.join(save_path, f"{sample_name}_proportions.png"), dpi=300)
+    legend_fig.savefig(f"{save_path}/proportions_legend.png", dpi=300)
+    fig.savefig(f"{save_path}/{sample_name}_proportions.png", dpi=300)
 
-
-def parse_arguments():
-    """parses several command line arguments provided by the user (use --help to see the full list)"""
-
-    parser = argparse.ArgumentParser(
-        description="interface for static celesta assignment visualization"
-    )
-
-    parser.add_argument(
-        "-a",
-        "--assignments_path",
-        help="file path that points to the underlying location of the assignments.csv file",
-    )
-    parser.add_argument(
-        "-c",
-        "--colormap_path",
-        help="file path that points to the underlying location of the colormap.json file",
-    )
-    parser.add_argument(
-        "-d",
-        "--display_cells",
-        default="all",
-        help="list of cell types to display in the visualization; \
-                                                                          this argument should be a comma separated list with no spaces or 'all'; \
-                                                                          defaults to 'all'",
-    )
-    parser.add_argument(
-        "-s",
-        "--save_path",
-        help="directory path that points to the underlying location where output will be written",
-    )
-
-    return parser.parse_args()
-
-
-def main():
-    arguments = parse_arguments()
-
-    assignments_path = arguments.assignments_path
-    colormap_path = arguments.colormap_path
-    display_cells = arguments.display_cells
-    save_path = arguments.save_path
-
-    sample_name = os.path.basename(assignments_path).replace("_assignments.csv", "")
-
-    with open(colormap_path, "r") as file:
-        cell_type_info = json.load(file)
-
-    display_cells = (
-        display_cells.split(",")
-        if display_cells != "all"
-        else list(cell_type_info.keys())
-    )
-    assignments = pd.read_csv(assignments_path).dropna()
-
-    os.makedirs(save_path, exist_ok=True)
-    os.makedirs(os.path.join(save_path, "cell_plots"), exist_ok=True)
-    os.makedirs(os.path.join(save_path, "cell_proportions"), exist_ok=True)
-
-    visualize_assignments(
-        assignments,
-        cell_type_info,
-        display_cells,
-        os.path.join(save_path, "cell_plots"),
-        sample_name,
-    )
-    visualize_cell_proportions(
-        assignments,
-        cell_type_info,
-        os.path.join(save_path, "cell_proportions"),
-        sample_name,
-    )
-
-
-if __name__ == "__main__":
-    main()
+    plt.close(fig)
+    plt.close(legend_fig)

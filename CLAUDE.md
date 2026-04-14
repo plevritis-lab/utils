@@ -61,10 +61,18 @@ uv run python3 1_segmentation/src/run_pipeline.py --config path/to/config.yaml -
 
 See `1_segmentation/conf/config_template.yaml` for the config format.
 
+CELESTA pipeline (config-driven, runs thresholds + assignment + visualization):
+
+```bash
+uv run python3 2_celesta/src/run_pipeline.py --config path/to/config.yaml
+uv run python3 2_celesta/src/run_pipeline.py --config path/to/config.yaml --filter sample1,sample2
+```
+
+See `2_celesta/conf/config_template.yaml` for the config format.
+
 Other Python scripts:
 
 ```bash
-uv run python3 2_celesta/src/generate_thresholds.py --help
 uv run python3 3_colocalization/src/local_colocalization/generate_spatial_embeddings.py --help
 uv run python3 4_topology/src/apply_persistent_homology.py --help
 ```
@@ -72,7 +80,6 @@ uv run python3 4_topology/src/apply_persistent_homology.py --help
 R scripts:
 
 ```bash
-Rscript 2_celesta/src/apply_celesta.R --help
 Rscript 3_colocalization/src/global_colocalization/generate_condition_summaries.R --help
 ```
 

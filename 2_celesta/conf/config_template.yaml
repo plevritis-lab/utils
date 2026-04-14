@@ -1,0 +1,7 @@
+image_directory: /Users/rohit/Downloads/data
+signature_matrix: /Users/rohit/Downloads/data/signature_matrix.csv
+segment_channel: CYTOKERATIN, CD45
+segmentation_method: cellpose
+
+# optional — auto-generated from signature matrix if omitted
+# colormap: /path/to/colormap.json
