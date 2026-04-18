@@ -38,10 +38,14 @@ def test_config_loading_and_filter_passthrough(tmp_path, celesta_pipeline):
         signature_matrix_path, index=False
     )
 
+    panel_path = tmp_path / "channel_names.txt"
+    panel_path.write_text("DAPI\nCYTOKERATIN\n")
+
     config_path = tmp_path / "config.yaml"
     config = {
         "image_directory": str(image_directory),
         "signature_matrix": str(signature_matrix_path),
+        "panel_path": str(panel_path),
         "segmentation_method": "cellpose",
         "segment_channel": "CYTOKERATIN",
     }
